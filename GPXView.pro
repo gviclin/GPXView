@@ -27,12 +27,13 @@ HEADERS += \
     chartview.h \
     cdata.h \
     cgeoconvert.h \
-    cgpxtools.h
+    cgpxtools.h \
+    mainwidget.h
 
 SOURCES += \
     main.cpp \
-    chart.cpp \
     chartview.cpp \
     cdata.cpp \
     cgeoconvert.cpp \
-    cgpxtools.cpp
+    cgpxtools.cpp \
+    mainwidget.cpp

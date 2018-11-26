@@ -12,9 +12,10 @@ public:
     double lon;
     double lat;
     int bpm;
-    int alt;
+    float alt;
     int temp;
     int cad;
+    int pwr;
     QDate day;
     QTime hours;
 
@@ -22,6 +23,7 @@ public:
     double distance; //in meters
     float speed; //in km/h
     int secDelta;
+    int sec;
    };
 
 #endif // CDATA_H

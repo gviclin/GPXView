@@ -12,7 +12,7 @@ class CGpxTools
 public:
     CGpxTools();
 
-    void GetGPXData(QString sFile, QList<CData>& list);
+    static void GetGPXData(QString sFile, QList<CData>& list);
 };
 
 #endif // CGPXTOOLS_H

@@ -49,7 +49,7 @@ void CGpxTools::GetGPXData(QString sFile, QList<CData>& list)
                     {
                         if (reader.isStartElement() && reader.name()== "ele")
                         {
-                           item.alt = reader.readElementText().toInt();
+                           item.alt = reader.readElementText().toFloat();
                         }
                         if (reader.isStartElement() && reader.name()== "time")
                         {
@@ -78,7 +78,7 @@ void CGpxTools::GetGPXData(QString sFile, QList<CData>& list)
             }
             double N,E, Nold,Eold, distOld,temp;
             long timeOld;
-            int Z;
+            int Z,secOld;
 
             QList<CData>::iterator i;
             qDebug()<<"Number of elements <"<<list.size()<<">";
@@ -96,6 +96,8 @@ void CGpxTools::GetGPXData(QString sFile, QList<CData>& list)
                     item.speed  = 0;
                     timeOld = item.hours.secsTo(QTime(0,0,0));
                     item.secDelta =0;
+                    item.sec=0;
+                    secOld=0;
                 }
                 else
                 {
@@ -103,32 +105,35 @@ void CGpxTools::GetGPXData(QString sFile, QList<CData>& list)
                     item.distance = temp + distOld;
                     item.secDelta = timeOld-item.hours.secsTo(QTime(0,0,0));
                     item.speed = 3.6*temp/(item.secDelta);
+                    item.sec=item.secDelta+secOld;
 
                 }
+                secOld=item.sec;
                 Nold = N;
                 Eold = E;
                 distOld = item.distance;
                 timeOld = item.hours.secsTo(QTime(0,0,0));
 
             }
-/*
+
             for (i = list.begin(); i != list.end(); ++i)
             {
                 CData& item = *i;
-                qDebug()<< "Point : lat "<< (item.lat)
-                                        << ", lon "<< (item.lon)
-                                        << ", hr "<< (item.bpm)
-                                        << ", alt "<< (item.alt)
-                                        << ", temp "<< (item.temp)
-                                        << ", cad "<< (item.cad)
-                                        << ", day "<< (item.day.toString())
-                                        << ", hours "<< (item.hours.toString())
-                                        << ", distance "<< (item.distance)
-                                        << ", secDelta "<< (item.secDelta)
-                                        << ", speed "<< (item.speed);
+                qDebug()<< "Point : sec"    << (item.sec)
+                                            << ", secDelta "<< (item.secDelta)
+                                            << ", lat "<< (item.lat)
+                                            << ", lon "<< (item.lon)
+                                            << ", hr "<< (item.bpm)
+                                            << ", alt "<< (item.alt)
+                                            << ", temp "<< (item.temp)
+                                            << ", cad "<< (item.cad)
+                                            << ", day "<< (item.day.toString())
+                                            << ", hours "<< (item.hours.toString())
+                                            << ", distance "<< (item.distance)
+                                            << ", speed "<< (item.speed);
 
 
-            }*/
+            }
         }
         else
           qDebug("not gpx element");

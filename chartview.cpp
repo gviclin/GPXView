@@ -22,7 +22,7 @@ ChartView::ChartView(QChart *chart, QWidget *parent) :
 
 bool ChartView::viewportEvent(QEvent *event)
 {
-    if (event->type() == QEvent::TouchBegin) {
+ /*   if (event->type() == QEvent::TouchBegin) {
         // By default touch events are converted to mouse events. So
         // after this event we will get a mouse event also but we want
         // to handle touch events as gestures only. So we need this safeguard
@@ -32,7 +32,7 @@ bool ChartView::viewportEvent(QEvent *event)
         // Turn off animations when handling gestures they
         // will only slow us down.
         chart()->setAnimationOptions(QChart::NoAnimation);
-    }
+    }*/
     return QChartView::viewportEvent(event);
 }
 
@@ -42,7 +42,7 @@ void ChartView::mousePressEvent(QMouseEvent *event)
         return;
     if (event->button() == Qt::LeftButton)
     {
-        QApplication::setOverrideCursor(QCursor(Qt::SizeAllCursor));
+        //QApplication::setOverrideCursor(QCursor(Qt::SizeAllCursor));
         m_lastMousePos = event->pos();
         event->accept();
     }
@@ -146,6 +146,7 @@ void ChartView::wheelEvent(QWheelEvent *event)
          else
              chart()->zoomOut();
         m_noUpdate = true;
+        //time de 500ms pour ne pas zoomer durant cette période
         QTimer::singleShot(500,(ChartView *) this, SLOT(ResetNoUpdate()));
     }
 
