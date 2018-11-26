@@ -42,7 +42,7 @@ void ChartView::mousePressEvent(QMouseEvent *event)
         return;
     if (event->button() == Qt::LeftButton)
     {
-        //QApplication::setOverrideCursor(QCursor(Qt::SizeAllCursor));
+        QApplication::setOverrideCursor(QCursor(Qt::SizeAllCursor));
         m_lastMousePos = event->pos();
         event->accept();
     }
