@@ -10,6 +10,8 @@
 
 #include "chartview.h"
 
+class Callout;
+
 class MainWidget : public QWidget
 {
     Q_OBJECT
@@ -31,10 +33,14 @@ public slots:
     QLineSeries *m_seriesSpeed;
     QLineSeries *m_seriesHR;
     QLineSeries *m_seriesAlt;
+    int m_EltNumbers;
 
 
     QGridLayout *m_mainLayout;
     QGridLayout *m_fontLayout;
+
+    Callout *m_tooltip;
+    QList<Callout *> m_callouts;
 };
 
 #endif // MAINWIDGET_H

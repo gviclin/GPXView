@@ -1,48 +1,54 @@
-
-#include "chartview.h"
 #include <QtGui/QMouseEvent>
 #include <QDebug>
 #include <QTimer>
+#include <QApplication>
+
+
+#include "chartview.h"
 
 ChartView::ChartView(QChart *chart, QWidget *parent) :
     QChartView(chart, parent),
-    m_isTouching(false),
     m_noUpdate(false),
     m_coordX(0),
-    m_coordY(0)
+    m_coordY(0),
+    m_tooltip(0),
+    m_mouseDataType(No_data)
 {
-    setRubberBand(QChartView::NoRubberBand);
+    setRubberBand(QChartView::HorizontalRubberBand);
     setDragMode(QGraphicsView::NoDrag);
-    this->setMouseTracking(true);
-
+    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    chart->setAcceptHoverEvents(true);
     m_coordX = new QGraphicsSimpleTextItem(chart);
+    m_coordX->setPos(chart->size().width()/2 - 50, chart->size().height());
+    m_coordX->setText("X: ");
     m_coordY = new QGraphicsSimpleTextItem(chart);
+    m_coordY->setPos(chart->size().width()/2 + 50, chart->size().height());
+    m_coordY->setText("Y: ");
+
+    this->setMouseTracking(true);
 
 }
 
-bool ChartView::viewportEvent(QEvent *event)
+void ChartView::resizeEvent(QResizeEvent *event)
 {
- /*   if (event->type() == QEvent::TouchBegin) {
-        // By default touch events are converted to mouse events. So
-        // after this event we will get a mouse event also but we want
-        // to handle touch events as gestures only. So we need this safeguard
-        // to block mouse events that are actually generated from touch.
-        m_isTouching = true;
-
-        // Turn off animations when handling gestures they
-        // will only slow us down.
-        chart()->setAnimationOptions(QChart::NoAnimation);
-    }*/
-    return QChartView::viewportEvent(event);
+    if (scene()) {
+        scene()->setSceneRect(QRect(QPoint(0, 0), event->size()));
+         chart()->resize(event->size());
+         m_coordX->setPos(chart()->size().width()/2 - 50, chart()->size().height() - 20);
+         m_coordY->setPos(chart()->size().width()/2 + 50, chart()->size().height() - 20);
+        /* const auto callouts = m_callouts;
+         for (Callout *callout : callouts)
+             callout->updateGeometry();*/
+    }
+    QGraphicsView::resizeEvent(event);
 }
 
 void ChartView::mousePressEvent(QMouseEvent *event)
 {
-    if (m_isTouching)
-        return;
     if (event->button() == Qt::LeftButton)
     {
-        //QApplication::setOverrideCursor(QCursor(Qt::SizeAllCursor));
+        QApplication::setOverrideCursor(QCursor(Qt::SizeAllCursor));
         m_lastMousePos = event->pos();
         event->accept();
     }
@@ -51,69 +57,43 @@ void ChartView::mousePressEvent(QMouseEvent *event)
 
 void ChartView::mouseMoveEvent(QMouseEvent *event)
 {
-    if (m_isTouching)
-        return;
-
-    // pan the chart with a middle mouse drag
-    if (event->buttons() & Qt::LeftButton)
+    if (m_mouseDataType != No_data)
     {
-        auto dPos = event->pos() - m_lastMousePos;
-        chart()->scroll(-dPos.x(), dPos.y());
+        QLineSeries* serie = GetCurrentSeries();
+        qreal temp = chart()->mapToValue(event->pos(),serie).x();
+        QString strValue = QString::number(temp, 'f', 1);
+        m_coordX->setText(QString("X: %1").arg(strValue));
+        m_coordY->setText(QString("Y: %1").arg(static_cast<int>(chart()->mapToValue(event->pos(),serie).y())));
 
-        m_lastMousePos = event->pos();
-        event->accept();
-
-        //QApplication::restoreOverrideCursor();
+        m_coordX->setVisible(true);
+        m_coordY->setVisible(true);
+     /*   m_coordX->setText(QString("X: %1").arg(event->pos().x()));
+        m_coordY->setText(QString("Y: %1").arg(event->pos().y()));*/
     }
-    /* Setting the mouse position label on the axis from value to position */
-     qreal x = (event->pos()).x();
-     qreal y = (event->pos()).y();
-
-     qreal xVal = chart()->mapToValue(event->pos()).x();
-     qreal yVal = chart()->mapToValue(event->pos()).y();
-              qDebug()<<"x: "<<xVal<<", y: "<<yVal;
-
-   /*qreal maxX = chart()->
-     qreal minX = axisX->min();
-     qreal maxY = axisY->max();
-     qreal minY = axisY->min();*/
-
-   //  if (xVal <= maxX && xVal >= minX && yVal <= maxY && yVal >= minY)
-     {
-         QPointF xPosOnAxis = chart()->mapToPosition(QPointF(x, 0));
-         QPointF yPosOnAxis = chart()->mapToPosition(QPointF(0, y));
-
-
-         /* m_coordX and m_coordY are `QGraphicsSimpleTextItem` */
-         m_coordX->setPos(x, xPosOnAxis.y() + 5);
-         m_coordY->setPos(x-4, y-15);
-
-         /* Displaying value of the mouse on the label */
-         m_coordX->setText(QString("%1").arg(xVal, 4, 'f', 1, '0'));
-         m_coordY->setText(QString("%1").arg(yVal, 4, 'f', 1, '0'));
-     }
-
-
+    else
+    {
+       m_coordX->setVisible(false);
+       m_coordY->setVisible(false);
+    }
     QChartView::mouseMoveEvent(event);
 
 }
 
 void ChartView::mouseReleaseEvent(QMouseEvent *event)
 {
-    if (m_isTouching)
-        m_isTouching = false;
-
     // Because we disabled animations when touch event was detected
     // we must put them back on.
     chart()->setAnimationOptions(QChart::SeriesAnimations);
 
     QChartView::mouseReleaseEvent(event);
+
+    QApplication::setOverrideCursor(QCursor(Qt::ArrowCursor));
 }
 
 void ChartView::keyPressEvent(QKeyEvent *event)
 {
     switch (event->key()) {
-    case Qt::Key_Plus:
+ /*   case Qt::Key_Plus:
         chart()->zoomIn();
         break;
     case Qt::Key_Minus:
@@ -130,7 +110,7 @@ void ChartView::keyPressEvent(QKeyEvent *event)
         break;
     case Qt::Key_Down:
         chart()->scroll(0, -100);
-        break;
+        break;*/
     default:
         QGraphicsView::keyPressEvent(event);
         break;
@@ -141,10 +121,14 @@ void ChartView::wheelEvent(QWheelEvent *event)
 {
     if (m_noUpdate == false)
     {
-        if ( event->delta()>0)
+ /*       if ( event->delta()>0)
              chart()->zoomIn();
          else
-             chart()->zoomOut();
+             chart()->zoomOut();*/
+        if ( event->delta()>0)
+             chart()->scroll(100, 0);
+        else
+             chart()->scroll(-100, 0);
         m_noUpdate = true;
         //time de 500ms pour ne pas zoomer durant cette période
         QTimer::singleShot(500,(ChartView *) this, SLOT(ResetNoUpdate()));
@@ -155,4 +139,105 @@ void ChartView::wheelEvent(QWheelEvent *event)
 void ChartView::ResetNoUpdate()
 {
     m_noUpdate=false;
+}
+
+void ChartView::keepCallout()
+{
+   /* m_callouts.append(m_tooltip);
+    m_tooltip = new Callout(chart());*/
+}
+
+void ChartView::tooltipSpeed(QPointF point, bool state)
+{
+    m_mouseDataType = Data_speed;
+    tooltip(point, state);
+
+}
+void ChartView::tooltipHRM(QPointF point, bool state)
+{
+    m_mouseDataType = Data_HRM;
+    tooltip(point, state);
+}
+void ChartView::tooltipAlt(QPointF point, bool state)
+{
+    m_mouseDataType = Data_Alt;
+    tooltip(point, state);
+}
+
+void ChartView::tooltip(QPointF point, bool state)
+{
+    if (m_tooltip == 0)
+        m_tooltip = new Callout(chart());
+
+    if (state) {
+        QLineSeries* serie = GetCurrentSeries();
+
+        m_tooltip->setText(GetToolTipString(point));
+        m_tooltip->setAnchor(point);
+        m_tooltip->setZValue(11);
+        m_tooltip->updateGeometry(serie);
+        m_tooltip->show();
+    } else {
+        m_tooltip->hide();
+        m_mouseDataType = No_data;
+    }
+}
+QLineSeries* ChartView::GetCurrentSeries()
+{
+    QList<QAbstractSeries *> list = chart()->series();
+
+    QAbstractSeries* serie;
+    QString strKey = GetCurrentSeriesString();
+    foreach( serie, list )
+    {
+        if (serie->name() == strKey)
+        {
+            return (QLineSeries*)serie;
+        }
+    }
+
+    return NULL;
+}
+
+QString ChartView::GetCurrentSeriesString()
+{
+    QString str;
+    switch (m_mouseDataType){
+        case No_data:str="No_data";break;
+        case Data_speed:str="Speed";break;
+        case Data_HRM:str="HRM";break;
+        case Data_Alt:str="Altitude";break;
+        default:str="Error";break;
+    }
+    return str;
+}
+
+QString ChartView::GetToolTipString(QPointF point)
+{
+    QString str="";
+
+    QString strValueX = QString::number(point.x(), 'f', 1);
+    QString strValueY;
+
+
+    switch (m_mouseDataType){
+        case No_data:
+            str = "";
+            break;
+        case Data_speed:
+            strValueY = QString::number(point.y(), 'f', 1);
+            str = QString("%1 %2 km/h\nX %3").arg("Speed").arg(strValueY).arg(strValueX);
+            break;
+        case Data_HRM:
+            strValueY = QString::number(point.y(), 'f', 0);
+            str = QString("%1 %2 bpm\nX %3").arg("HR").arg(strValueY).arg(strValueX);
+            break;
+        case Data_Alt:
+            strValueY = QString::number(point.y(), 'f', 0);
+            str = QString("%1 %2 m\nX %3").arg("Altitude").arg(strValueY).arg(strValueX);
+            break;
+        default:
+            str="";
+    }
+    return str;
 }

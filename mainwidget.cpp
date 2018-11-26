@@ -3,6 +3,8 @@
 
 #include <QtCharts/QValueAxis>
 #include <QtCharts/QLegendMarker>
+#include <QtCharts/QValueAxis>
+#include <QtCharts/QDateTimeAxis>
 
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QLabel>
@@ -11,10 +13,10 @@
 #include <QtWidgets/QFormLayout>
 
 #include <QtCore/QtMath>
-#include <QtCore/QtMath>
-#include <cstdlib>
 
-MainWidget::MainWidget(QWidget *parent) : QWidget(parent)
+MainWidget::MainWidget(QWidget *parent) :
+    QWidget(parent),
+    m_EltNumbers(0)
 {
     // Create chart view with the chart
     m_chart = new QChart();
@@ -124,17 +126,18 @@ void MainWidget::RetreiveDatas()
 
     for (it = list.begin(); it != list.end(); ++it) {
         CData data = *it;
-/*        QPointF p((qreal) data.distance/1000, data.speed);
+ /*       QPointF p((qreal) data.distance/1000, data.speed);
         QPointF pHR((qreal) data.distance/1000, data.bpm);
         QPointF pAlt((qreal) data.distance/1000, data.alt);*/
-        QPointF p((qreal) data.sec, data.speed);
-        QPointF pHR((qreal) data.sec, data.bpm);
-        QPointF pAlt((qreal) data.sec, data.alt);
+        QPointF p((qreal) 1000*data.sec, data.speed);
+        QPointF pHR((qreal) 1000*data.sec, data.bpm);
+        QPointF pAlt((qreal) 1000*data.sec, data.alt);
         //QPointF p((qreal) i, qSin(M_PI / 50 * i) * 100);
         //p.ry() += std::rand()/((RAND_MAX)/50);
         *m_seriesSpeed << p;
         *m_seriesHR <<pHR;
         *m_seriesAlt << pAlt;
+        m_EltNumbers++;
     }
 }
 
@@ -142,34 +145,78 @@ void MainWidget::AddDatasToChart()
 {
     // Customize color
     QPen pen(QColor(Qt::blue));
-    pen.setWidth(1);
+    pen.setWidth(2);
     m_seriesSpeed->setPen(pen);
 
     QPen pen2(QColor(Qt::red));
-    pen2.setWidth(1);
+    pen2.setWidth(2);
     m_seriesHR->setPen(pen2);
 
     QPen pen3(QColor(Qt::black));
-    pen3.setWidth(1);
+    pen3.setWidth(2);
     m_seriesAlt->setPen(pen3);
+
+
+    connect(m_seriesHR, &QLineSeries::clicked, m_chartView, &ChartView::keepCallout);
+    connect(m_seriesHR, &QLineSeries::hovered, m_chartView, &ChartView::tooltipHRM);
+
+    connect(m_seriesAlt, &QLineSeries::clicked, m_chartView, &ChartView::keepCallout);
+    connect(m_seriesAlt, &QLineSeries::hovered, m_chartView, &ChartView::tooltipAlt);
+
+    connect(m_seriesSpeed, &QLineSeries::clicked, m_chartView, &ChartView::keepCallout);
+    connect(m_seriesSpeed, &QLineSeries::hovered, m_chartView, &ChartView::tooltipSpeed);
+
+
+    //axes
+    QDateTime a,b;
+    a.setTime(QTime(0,0,0));
+    b.setTime(QTime(1,0,0));
+    QDateTimeAxis *axisX = new QDateTimeAxis;
+    axisX->setFormat("hh mm ss");
+  //  axisX->setRange(0, m_EltNumbers);
+    axisX->setMin(a);
+    axisX->setMax(b);
+    axisX->setTickCount(10);
+ //   axisX->setLabelFormat("%.0d");
+    axisX->setTitleText("Duration");
+    m_chartView->chart()->addAxis(axisX, Qt::AlignTop);
+    m_seriesAlt->attachAxis(axisX);
+    m_seriesHR->attachAxis(axisX);
+    m_seriesSpeed->attachAxis(axisX);
+
+
+
+    QValueAxis *axisYAlt = new QValueAxis;
+    axisYAlt->setRange(0, 150);
+    axisYAlt->setTickCount(10);
+    axisYAlt->setLabelFormat("%.0d");
+    axisYAlt->setTitleText("Altitude");
+    axisYAlt->setLinePenColor(m_seriesAlt->pen().color());
+    m_chartView->chart()->addAxis(axisYAlt, Qt::AlignLeft);
+    m_seriesAlt->attachAxis(axisYAlt);
+
+
+    QValueAxis *axisYSpeed = new QValueAxis;
+    axisYSpeed->setRange(0, 90);
+    axisYSpeed->setTickCount(10);
+    axisYSpeed->setLabelFormat("%.0d");
+    axisYSpeed->setTitleText("Speed");
+    axisYSpeed->setLinePenColor(m_seriesSpeed->pen().color());
+    m_chartView->chart()->addAxis(axisYSpeed, Qt::AlignRight);
+    m_seriesAlt->attachAxis(axisYSpeed);
+
+    QValueAxis *axisYHRM = new QValueAxis;
+    axisYHRM->setRange(0, 200);
+    axisYHRM->setTickCount(10);
+    axisYHRM->setLabelFormat("%.0d");
+    axisYHRM->setTitleText("HRM");
+    axisYHRM->setLinePenColor(m_seriesHR->pen().color());
+    m_chartView->chart()->addAxis(axisYHRM, Qt::AlignRight);
+    m_seriesAlt->attachAxis(axisYHRM);
 
     //chart->addSeries(m_seriesSpeed);
     m_chart->addSeries(m_seriesHR);
     m_chart->addSeries(m_seriesAlt);
     m_chart->addSeries(m_seriesSpeed);
-
-
-    //axes
-    QValueAxis *axisX = new QValueAxis;
-    //axisX->setRange(0, 50);
-    axisX->setTickCount(10);
-    axisX->setLabelFormat("%.0d");
-    m_chartView->chart()->setAxisX(axisX, m_seriesHR);
-
-    QValueAxis *axisY = new QValueAxis;
-    //axisY->setRange(0, 150);
-    axisY->setTickCount(10);
-    axisY->setLabelFormat("%.0d");
-    m_chartView->chart()->setAxisY(axisY, m_seriesAlt);
 
 }

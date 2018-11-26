@@ -76,9 +76,9 @@ void CGpxTools::GetGPXData(QString sFile, QList<CData>& list)
                 }
                 reader.readNext();
             }
-            double N,E, Nold,Eold, distOld,temp;
-            long timeOld;
-            int Z,secOld;
+            double N,E, Nold=0,Eold=0, distOld=0,temp;
+            long timeOld=0;
+            int Z,secOld=0;
 
             QList<CData>::iterator i;
             qDebug()<<"Number of elements <"<<list.size()<<">";
@@ -96,8 +96,7 @@ void CGpxTools::GetGPXData(QString sFile, QList<CData>& list)
                     item.speed  = 0;
                     timeOld = item.hours.secsTo(QTime(0,0,0));
                     item.secDelta =0;
-                    item.sec=0;
-                    secOld=0;
+                    item.sec=0;                    
                 }
                 else
                 {
@@ -115,7 +114,7 @@ void CGpxTools::GetGPXData(QString sFile, QList<CData>& list)
                 timeOld = item.hours.secsTo(QTime(0,0,0));
 
             }
-
+/*
             for (i = list.begin(); i != list.end(); ++i)
             {
                 CData& item = *i;
@@ -133,7 +132,7 @@ void CGpxTools::GetGPXData(QString sFile, QList<CData>& list)
                                             << ", speed "<< (item.speed);
 
 
-            }
+            }*/
         }
         else
           qDebug("not gpx element");

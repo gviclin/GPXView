@@ -23,12 +23,12 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 
 HEADERS += \
-    chart.h \
     chartview.h \
     cdata.h \
     cgeoconvert.h \
     cgpxtools.h \
-    mainwidget.h
+    mainwidget.h \
+    callout.h
 
 SOURCES += \
     main.cpp \
@@ -36,4 +36,5 @@ SOURCES += \
     cdata.cpp \
     cgeoconvert.cpp \
     cgpxtools.cpp \
-    mainwidget.cpp
+    mainwidget.cpp \
+    callout.cpp
