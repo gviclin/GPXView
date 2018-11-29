@@ -56,6 +56,7 @@ private:
     QList<Callout *> m_callouts;
 
     MouseDataType m_mouseDataType;
+
 };
 
 #endif

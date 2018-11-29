@@ -10,6 +10,7 @@
 
 #include "chartview.h"
 
+class CData;
 class Callout;
 
 class MainWidget : public QWidget
@@ -17,8 +18,8 @@ class MainWidget : public QWidget
     Q_OBJECT
 public:
     explicit MainWidget(QWidget *parent = nullptr);
-    void RetreiveDatas();
-    void AddDatasToChart();
+    void addNewDatas(QList<CData> list, QString sName);
+    void addDatasToChart(QString str);
 
 signals:
 
@@ -27,20 +28,28 @@ public slots:
      void handleMarkerClicked();
 
  private:
+    void CreateColor();
+
+    QMenu *m_fileMenu;
     QChart *m_chart;
     ChartView *m_chartView;
 
-    QLineSeries *m_seriesSpeed;
-    QLineSeries *m_seriesHR;
-    QLineSeries *m_seriesAlt;
-    int m_EltNumbers;
+    QMap<QString,QLineSeries *>m_seriesSpeedMap;
+    QMap<QString,QLineSeries *>m_seriesHRMap;
+    QMap<QString,QLineSeries *>m_seriesAltMap;
+    QList<QString>m_GpxNameList;
 
+    QVector<QColor> m_colorSpeedVector;
+    QVector<QColor> m_colorHRVector;
+    QVector<QColor> m_colorAltVector;
 
     QGridLayout *m_mainLayout;
     QGridLayout *m_fontLayout;
 
     Callout *m_tooltip;
     QList<Callout *> m_callouts;
+
+
 };
 
 #endif // MAINWIDGET_H

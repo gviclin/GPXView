@@ -7,15 +7,18 @@ class CData
 {
 public:
     CData();
+      CData& operator=(const CData& data);
+      CData& operator+=(const CData& data);
+      void DivideBy(const int number);
 
 public:
     double lon;
     double lat;
-    int bpm;
+    float bpm;
     float alt;
-    int temp;
-    int cad;
-    int pwr;
+    float temp;
+    float cad;
+    float pwr;
     QDate day;
     QTime hours;
 
@@ -24,6 +27,7 @@ public:
     float speed; //in km/h
     int secDelta;
     int sec;
+    bool bAddedPoint;
    };
 
 #endif // CDATA_H

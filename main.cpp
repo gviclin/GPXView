@@ -4,18 +4,19 @@
 #include <QtWidgets/QMainWindow>
 #include <QtCore/QtMath>
 #include <cstdlib>
+#include <QDebug>
 
-QT_CHARTS_USE_NAMESPACE
+#include "mainwindow.h"
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
-    MainWidget w;
-    w.resize(1024, 800);
-    w.show();
+    MainWindow window;
+    window.show();
 
     return a.exec();
 }
+
 
 

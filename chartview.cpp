@@ -190,7 +190,7 @@ QLineSeries* ChartView::GetCurrentSeries()
     QString strKey = GetCurrentSeriesString();
     foreach( serie, list )
     {
-        if (serie->name() == strKey)
+        if (serie->name().contains(strKey))
         {
             return (QLineSeries*)serie;
         }

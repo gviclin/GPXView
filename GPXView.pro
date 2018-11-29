@@ -28,7 +28,8 @@ HEADERS += \
     cgeoconvert.h \
     cgpxtools.h \
     mainwidget.h \
-    callout.h
+    callout.h \
+    mainwindow.h
 
 SOURCES += \
     main.cpp \
@@ -37,4 +38,5 @@ SOURCES += \
     cgeoconvert.cpp \
     cgpxtools.cpp \
     mainwidget.cpp \
-    callout.cpp
+    callout.cpp \
+    mainwindow.cpp

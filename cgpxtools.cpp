@@ -6,7 +6,7 @@ CGpxTools::CGpxTools()
 
 }
 
-void CGpxTools::GetGPXData(QString sFile, QList<CData>& list)
+void CGpxTools::GetGPXData(QString sFile, QList<CData>& list,QList<CData>& listTransformed)
 {
     //open GPX File
     QFile file(sFile);
@@ -79,15 +79,17 @@ void CGpxTools::GetGPXData(QString sFile, QList<CData>& list)
             double N,E, Nold=0,Eold=0, distOld=0,temp;
             long timeOld=0;
             int Z,secOld=0;
+            double speedOld=0;
+            double speedOldOld=0;
 
             QList<CData>::iterator i;
             qDebug()<<"Number of elements <"<<list.size()<<">";
             //float distance =0;
-            for (i = list.begin(); i!=list.end(); ++i)
+            for (i = list.begin(); i!=list.end();)
             {
                 CData& item = *i;
 
-                CGeoConvert::LLtoUTM(eWGS84,item.lat,item.lon,N,E,Z);
+                  CGeoConvert::LLtoUTM(eWGS84,item.lat,item.lon,N,E,Z);
                // qDebug()<<"x, y : <"<<N<<" , "<<E<< ". Zone : "<<Z;
 
                 if (i == list.begin())
@@ -106,36 +108,181 @@ void CGpxTools::GetGPXData(QString sFile, QList<CData>& list)
                     item.speed = 3.6*temp/(item.secDelta);
                     item.sec=item.secDelta+secOld;
 
+                    //correction garmin : un point si il n'a pas bouger par rapport à l'ancien
+                    if (0==temp)
+                    {
+                        i = list.erase(i);
+                        continue;
+                    }
+                    //DumpElement(item);
+
+                    //correction points abérants
+                    float delta = item.speed-speedOld;
+                    float DeltaOld= speedOld-speedOldOld;/*
+                    if (delta>10 && DeltaOld < -10)
+                    {
+                        //pb
+                        qDebug()<<"point : " << item.sec << "speed :" <<speedOldOld << " " << speedOld << " " << item.speed;
+
+                        QList<CData>::iterator it_temp = i;
+                        if (it_temp != list.begin())
+                        {
+                            it_temp--;
+                            if (it_temp!= list.begin())
+                            {
+                                it_temp = i--;
+                                list.erase(it_temp);
+                            }
+                        }
+                        speedOld = item.speed;
+                        speedOldOld = item.speed;
+                        secOld=item.sec;
+                        Nold = N;
+                        Eold = E;
+                        distOld = item.distance;
+                        timeOld = item.hours.secsTo(QTime(0,0,0));
+                         ++i;
+                        continue;
+                    }
+*/
                 }
                 secOld=item.sec;
                 Nold = N;
                 Eold = E;
                 distOld = item.distance;
                 timeOld = item.hours.secsTo(QTime(0,0,0));
-
+                speedOldOld=speedOld;
+                speedOld = item.speed;
+                 ++i;
             }
-/*
-            for (i = list.begin(); i != list.end(); ++i)
-            {
-                CData& item = *i;
-                qDebug()<< "Point : sec"    << (item.sec)
-                                            << ", secDelta "<< (item.secDelta)
-                                            << ", lat "<< (item.lat)
-                                            << ", lon "<< (item.lon)
-                                            << ", hr "<< (item.bpm)
-                                            << ", alt "<< (item.alt)
-                                            << ", temp "<< (item.temp)
-                                            << ", cad "<< (item.cad)
-                                            << ", day "<< (item.day.toString())
-                                            << ", hours "<< (item.hours.toString())
-                                            << ", distance "<< (item.distance)
-                                            << ", speed "<< (item.speed);
 
-
-            }*/
+            DumpList(list);
         }
         else
           qDebug("not gpx element");
     }
 
+    //upscaling
+    CData Olditem(*list.begin());
+    QList<CData> listUpscaling;
+    listUpscaling.append(Olditem);
+    for (QList<CData>::iterator i = list.begin(); i != list.end(); ++i)
+    {
+        CData& item = *i;
+
+        if (list.begin() != i)
+        {
+            if (item.secDelta > 1)
+            {
+                //réechantilloner,
+                //Calcul des pentes de chaque type d'info
+                double bpmSlope = (item.bpm-Olditem.bpm)/item.secDelta;
+                double vitesseSlope = (item.speed-Olditem.speed)/item.secDelta;
+                double altSlope = (item.alt-Olditem.alt)/item.secDelta;
+                double tempSlope = (item.temp-Olditem.temp)/item.secDelta;
+                double tempCad = (item.cad-Olditem.cad)/item.secDelta;
+                double tempDist = (item.distance-Olditem.distance)/item.secDelta;
+                double tempLon = (item.lon-Olditem.lon)/item.secDelta;
+                double tempLat = (item.lat-Olditem.lat)/item.secDelta;
+
+                for (int ind =1;ind <item.secDelta;++ind)
+                {
+                   CData newItem;
+                   newItem.lon=0;
+                   newItem.lat=0;
+                   newItem.secDelta=1;
+                   newItem.sec=Olditem.sec+ind;
+                   newItem.day = Olditem.day;
+                   newItem.hours = Olditem.hours.addSecs(ind);
+                   newItem.bpm= Olditem.bpm + ind*bpmSlope;
+                   newItem.speed= Olditem.speed + ind*vitesseSlope;
+                   newItem.alt= Olditem.alt + ind*altSlope;
+                   newItem.temp= Olditem.temp + ind*tempSlope;
+                   newItem.cad= Olditem.cad + ind*tempCad;
+                   newItem.distance= Olditem.distance + ind*tempDist;
+                   newItem.lon= Olditem.lon + ind*tempLon;
+                   newItem.lat= Olditem.lat + ind*tempLat;
+                   newItem.bAddedPoint=true;
+                   listUpscaling.append(newItem);
+                }
+                item.secDelta=1;
+            }
+            listUpscaling.append(item);
+        }
+        Olditem = item;
+    }
+
+  //  DumpList(listUpscaling);
+
+    //Moyenne mobile centrée
+    QList<CData>::iterator i,i_internal_plus,i_internal_moins;
+    int AverageType = 3; //0 pas de moyenne, 1 : moyenne sur 3, 2 : moyenne sur 5, etc
+    CData data;
+    short ind;
+    short number =0;
+    int test=0;
+    for (i = listUpscaling.begin(); i != listUpscaling.end(); i++)
+    {
+        number=1; //1 element minimum dans chaque moyenne
+        data = (*i);
+
+        i_internal_plus=i;
+        if (i_internal_plus!=listUpscaling.end())
+        {
+            i_internal_plus++;
+            for (ind=0;i_internal_plus!=listUpscaling.end() && ind<AverageType ;i_internal_plus++)
+            {
+               data+=(*i_internal_plus);
+               number++;
+               ind++;
+            }
+        }
+
+
+        i_internal_moins=i;
+        if (i_internal_moins!=listUpscaling.begin())
+        {
+            i_internal_moins--;
+            for (ind=0;i_internal_moins!=listUpscaling.begin() && ind<AverageType ;i_internal_moins--)
+            {
+               data+=(*i_internal_moins);
+               number++;
+               ind++;
+            }
+        }
+
+        data.DivideBy(number);
+
+        listTransformed.append(data);
+        test++;
+    }
+
+
+    //DumpList(listTransformed);
+}
+
+void CGpxTools::DumpList(QList<CData>& list)
+{
+    QList<CData>::iterator i;
+    for (i = list.begin(); i != list.end(); ++i)
+    {
+        DumpElement(*i);
+    }
+    qDebug()<< "Element number :" << list.count();
+}
+
+void CGpxTools::DumpElement(CData& item)
+{
+    qDebug()<< (item.bAddedPoint?"  ":"")<<"Point : sec"    << (item.sec)
+                                << ", secDelta "<< (item.secDelta)
+                                << ", lat "<< (item.lat)
+                                << ", lon "<< (item.lon)
+                                << ", hr "<< (item.bpm)
+                                << ", alt "<< (item.alt)
+                                << ", temp "<< (item.temp)
+                                << ", cad "<< (item.cad)
+                                << ", day "<< (item.day.toString())
+                                << ", hours "<< (item.hours.toString())
+                                << ", distance "<< (item.distance)
+                                << ", speed "<< (item.speed);
 }

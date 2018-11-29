@@ -11,8 +11,10 @@ class CGpxTools
 {
 public:
     CGpxTools();
+    static void DumpList(QList<CData>& list);
+    static void DumpElement(CData& item);
+    static void GetGPXData(QString sFile, QList<CData>& list,QList<CData>& listTransformed);
 
-    static void GetGPXData(QString sFile, QList<CData>& list);
 };
 
 #endif // CGPXTOOLS_H

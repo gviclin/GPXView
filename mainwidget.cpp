@@ -1,5 +1,5 @@
 #include "mainwidget.h"
-#include "cgpxtools.h"
+#include "cdata.h"
 
 #include <QtCharts/QValueAxis>
 #include <QtCharts/QLegendMarker>
@@ -11,13 +11,14 @@
 #include <QtCore/QDebug>
 
 #include <QtWidgets/QFormLayout>
-
 #include <QtCore/QtMath>
 
+
 MainWidget::MainWidget(QWidget *parent) :
-    QWidget(parent),
-    m_EltNumbers(0)
+    QWidget(parent)
 {
+    CreateColor();
+
     // Create chart view with the chart
     m_chart = new QChart();
     m_chartView = new ChartView(m_chart, this);
@@ -27,13 +28,6 @@ MainWidget::MainWidget(QWidget *parent) :
     m_mainLayout = new QGridLayout();
     m_mainLayout->addWidget(m_chartView, 0, 1, 3, 1);
     setLayout(m_mainLayout);
-
-    // Add few series
-    RetreiveDatas();
-
-    AddDatasToChart();
-
-    connectMarkers();
 
     // Set the title and show legend
     m_chart->setTitle("GPX analysis");
@@ -99,6 +93,11 @@ void MainWidget::handleMarkerClicked()
         pen.setColor(color);
         marker->setPen(pen);
 
+        //hide/show corresponding axes
+    /*    QLineSeries* line = (QLineSeries *)marker->series();
+        QAbstractAxis * axisYAlt = m_chart->axisY(m_seriesSpeed);
+        axisYAlt->hide();*/
+
         break;
         }
     default:
@@ -109,83 +108,95 @@ void MainWidget::handleMarkerClicked()
     }
 }
 
-void MainWidget::RetreiveDatas()
+void MainWidget::addNewDatas(QList<CData> list, QString sName)
 {
-    QList<CData> list;
-    CGpxTools::GetGPXData("../GPXView/Sortie_v_lo_le_midi.gpx",list);
+   m_GpxNameList.append(sName);
 
-    m_seriesSpeed = new QLineSeries();
-    m_seriesHR = new QLineSeries();
-    m_seriesAlt = new QLineSeries();
+    QLineSeries* seriesSpeed = new QLineSeries();
+    QLineSeries* seriesHR = new QLineSeries();
+    QLineSeries* seriesAlt = new QLineSeries();
 
-    m_seriesSpeed->setName("Speed");
-    m_seriesHR->setName("HRM");
-    m_seriesAlt->setName("Altitude");
+    seriesSpeed->setName("Speed - " + sName);
+    seriesHR->setName("HRM - " + sName);
+    seriesAlt->setName("Altitude - " + sName);
 
     QList<CData>::iterator it;
-
     for (it = list.begin(); it != list.end(); ++it) {
         CData data = *it;
  /*       QPointF p((qreal) data.distance/1000, data.speed);
         QPointF pHR((qreal) data.distance/1000, data.bpm);
         QPointF pAlt((qreal) data.distance/1000, data.alt);*/
-        QPointF p((qreal) 1000*data.sec, data.speed);
-        QPointF pHR((qreal) 1000*data.sec, data.bpm);
-        QPointF pAlt((qreal) 1000*data.sec, data.alt);
+        QPointF p((qreal) data.sec, data.speed);
+        QPointF pHR((qreal) data.sec, data.bpm);
+        QPointF pAlt((qreal) data.sec, data.alt);
         //QPointF p((qreal) i, qSin(M_PI / 50 * i) * 100);
         //p.ry() += std::rand()/((RAND_MAX)/50);
-        *m_seriesSpeed << p;
-        *m_seriesHR <<pHR;
-        *m_seriesAlt << pAlt;
-        m_EltNumbers++;
+        *seriesSpeed << p;
+        *seriesHR <<pHR;
+        *seriesAlt << pAlt;
+
     }
+
+    //m_EltNumbers = seriesAlt->points().last().rx();
+    m_seriesSpeedMap.insert(sName,seriesSpeed);
+    m_seriesHRMap.insert(sName,seriesHR);
+    m_seriesAltMap.insert(sName,seriesAlt);
+
+    addDatasToChart(sName);
+
+    connectMarkers();
 }
 
-void MainWidget::AddDatasToChart()
+void MainWidget::addDatasToChart(QString str)
 {
+
     // Customize color
-    QPen pen(QColor(Qt::blue));
+    int ColorNumber = m_seriesSpeedMap.count()-1;
+//    qDebug() << "addDatasToChart: ColorNumber " << ColorNumber;
+
+    QPen pen(m_colorSpeedVector[ColorNumber]);
     pen.setWidth(2);
-    m_seriesSpeed->setPen(pen);
+    m_seriesSpeedMap[str]->setPen(pen);
 
-    QPen pen2(QColor(Qt::red));
+    QPen pen2(m_colorHRVector[ColorNumber]);
     pen2.setWidth(2);
-    m_seriesHR->setPen(pen2);
+    m_seriesHRMap[str]->setPen(pen2);
 
-    QPen pen3(QColor(Qt::black));
+    QPen pen3(m_colorAltVector[ColorNumber]);
     pen3.setWidth(2);
-    m_seriesAlt->setPen(pen3);
+    m_seriesAltMap[str]->setPen(pen3);
 
+    connect(m_seriesSpeedMap[str], &QLineSeries::clicked, m_chartView, &ChartView::keepCallout);
+    connect(m_seriesSpeedMap[str], &QLineSeries::hovered, m_chartView, &ChartView::tooltipSpeed);
 
-    connect(m_seriesHR, &QLineSeries::clicked, m_chartView, &ChartView::keepCallout);
-    connect(m_seriesHR, &QLineSeries::hovered, m_chartView, &ChartView::tooltipHRM);
+    connect(m_seriesHRMap[str], &QLineSeries::clicked, m_chartView, &ChartView::keepCallout);
+    connect(m_seriesHRMap[str], &QLineSeries::hovered, m_chartView, &ChartView::tooltipHRM);
 
-    connect(m_seriesAlt, &QLineSeries::clicked, m_chartView, &ChartView::keepCallout);
-    connect(m_seriesAlt, &QLineSeries::hovered, m_chartView, &ChartView::tooltipAlt);
+    connect(m_seriesAltMap[str], &QLineSeries::clicked, m_chartView, &ChartView::keepCallout);
+    connect(m_seriesAltMap[str], &QLineSeries::hovered, m_chartView, &ChartView::tooltipAlt);
 
-    connect(m_seriesSpeed, &QLineSeries::clicked, m_chartView, &ChartView::keepCallout);
-    connect(m_seriesSpeed, &QLineSeries::hovered, m_chartView, &ChartView::tooltipSpeed);
-
-
+/*
     //axes
     QDateTime a,b;
-    a.setTime(QTime(0,0,0));
-    b.setTime(QTime(1,0,0));
-    QDateTimeAxis *axisX = new QDateTimeAxis;
-    axisX->setFormat("hh mm ss");
-  //  axisX->setRange(0, m_EltNumbers);
-    axisX->setMin(a);
-    axisX->setMax(b);
+    a.setTime(QTime(1,0,0));
+    b.setTime(QTime(2,0,0));
+    qint64 d = b.toMSecsSinceEpoch();
+    //QDateTimeAxis *axisX = new QDateTimeAxis;
+    QValueAxis *axisX = new QValueAxis;
+   // axisX->setFormat("hh:mm:ss");
+    axisX->setRange(0, m_EltNumbers);
+ //   axisX->setMin(a);
+ //   axisX->setMax(b);
     axisX->setTickCount(10);
  //   axisX->setLabelFormat("%.0d");
     axisX->setTitleText("Duration");
-    m_chartView->chart()->addAxis(axisX, Qt::AlignTop);
-    m_seriesAlt->attachAxis(axisX);
-    m_seriesHR->attachAxis(axisX);
-    m_seriesSpeed->attachAxis(axisX);
-
-
-
+  //  m_chartView->chart()->addAxis(axisX, Qt::AlignBottom);
+    //m_seriesAlt->attachAxis(axisX);
+   // m_seriesHR->attachAxis(axisX);
+  //  m_seriesSpeed->attachAxis(axisX);
+    m_chart->setAxisX(axisX,m_seriesSpeed);
+*/
+/*
     QValueAxis *axisYAlt = new QValueAxis;
     axisYAlt->setRange(0, 150);
     axisYAlt->setTickCount(10);
@@ -194,17 +205,18 @@ void MainWidget::AddDatasToChart()
     axisYAlt->setLinePenColor(m_seriesAlt->pen().color());
     m_chartView->chart()->addAxis(axisYAlt, Qt::AlignLeft);
     m_seriesAlt->attachAxis(axisYAlt);
-
-
+*//*
     QValueAxis *axisYSpeed = new QValueAxis;
-    axisYSpeed->setRange(0, 90);
+    //axisYSpeed->setRange(0, 90);
+    axisYSpeed->setMax(50);
     axisYSpeed->setTickCount(10);
     axisYSpeed->setLabelFormat("%.0d");
     axisYSpeed->setTitleText("Speed");
     axisYSpeed->setLinePenColor(m_seriesSpeed->pen().color());
-    m_chartView->chart()->addAxis(axisYSpeed, Qt::AlignRight);
-    m_seriesAlt->attachAxis(axisYSpeed);
-
+ //   m_chart->addAxis(axisYSpeed, Qt::AlignRight);
+  //  m_seriesAlt->attachAxis(axisYSpeed);
+    m_chart->setAxisY(axisYSpeed,m_seriesSpeed);*/
+/*
     QValueAxis *axisYHRM = new QValueAxis;
     axisYHRM->setRange(0, 200);
     axisYHRM->setTickCount(10);
@@ -212,11 +224,47 @@ void MainWidget::AddDatasToChart()
     axisYHRM->setTitleText("HRM");
     axisYHRM->setLinePenColor(m_seriesHR->pen().color());
     m_chartView->chart()->addAxis(axisYHRM, Qt::AlignRight);
-    m_seriesAlt->attachAxis(axisYHRM);
+    m_seriesAlt->attachAxis(axisYHRM);*/
 
-    //chart->addSeries(m_seriesSpeed);
-    m_chart->addSeries(m_seriesHR);
-    m_chart->addSeries(m_seriesAlt);
-    m_chart->addSeries(m_seriesSpeed);
+    m_chart->addSeries(m_seriesSpeedMap[str]);
+    m_chart->addSeries(m_seriesHRMap[str]);
+    m_chart->addSeries(m_seriesAltMap[str]);
+
+    m_chart->createDefaultAxes();
+
+}
+
+void MainWidget::CreateColor()
+{
+    m_colorSpeedVector.append(QColor(Qt::blue));
+    m_colorSpeedVector.append(QColor(Qt::darkBlue));
+    m_colorSpeedVector.append(QColor(Qt::darkCyan));
+    m_colorSpeedVector.append(QColor(Qt::cyan));
+    m_colorSpeedVector.append(QColor(Qt::blue));
+    m_colorSpeedVector.append(QColor(Qt::blue));
+    m_colorSpeedVector.append(QColor(Qt::blue));
+    m_colorSpeedVector.append(QColor(Qt::blue));
+    m_colorSpeedVector.append(QColor(Qt::blue));
+
+
+    m_colorHRVector.append(QColor(Qt::red));
+    m_colorHRVector.append(QColor(Qt::darkRed));
+    m_colorHRVector.append(QColor(Qt::darkMagenta));
+    m_colorHRVector.append(QColor(Qt::magenta));
+    m_colorHRVector.append(QColor(Qt::red));
+    m_colorHRVector.append(QColor(Qt::red));
+    m_colorHRVector.append(QColor(Qt::red));
+    m_colorHRVector.append(QColor(Qt::red));
+
+    m_colorAltVector.append(QColor(Qt::black));
+    m_colorAltVector.append(QColor(Qt::darkGray));
+    m_colorAltVector.append(QColor(Qt::gray));
+    m_colorAltVector.append(QColor(Qt::lightGray));
+    m_colorAltVector.append(QColor(Qt::black));
+    m_colorAltVector.append(QColor(Qt::black));
+    m_colorAltVector.append(QColor(Qt::black));
+    m_colorAltVector.append(QColor(Qt::black));
+
+
 
 }
