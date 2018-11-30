@@ -108,9 +108,9 @@ void MainWidget::handleMarkerClicked()
     }
 }
 
-void MainWidget::addNewDatas(QList<CData> list, QString sName)
+void MainWidget::addNewGPX(QList<CData> list, QString sName)
 {
-   m_GpxNameList.append(sName);
+    m_GpxNameList.append(sName);
 
     QLineSeries* seriesSpeed = new QLineSeries();
     QLineSeries* seriesHR = new QLineSeries();
@@ -147,6 +147,14 @@ void MainWidget::addNewDatas(QList<CData> list, QString sName)
     connectMarkers();
 }
 
+void MainWidget::setVisible(QString sName, bool boVisible)
+{
+    m_seriesSpeedMap[sName]->setVisible(boVisible);
+    m_seriesHRMap[sName]->setVisible(boVisible);
+    m_seriesAltMap[sName]->setVisible(boVisible);
+}
+
+
 void MainWidget::addDatasToChart(QString str)
 {
 
@@ -168,6 +176,7 @@ void MainWidget::addDatasToChart(QString str)
 
     connect(m_seriesSpeedMap[str], &QLineSeries::clicked, m_chartView, &ChartView::keepCallout);
     connect(m_seriesSpeedMap[str], &QLineSeries::hovered, m_chartView, &ChartView::tooltipSpeed);
+    connect(m_seriesSpeedMap[str], &QLineSeries::doubleClicked, m_chartView, &ChartView::DoubleClicSpeed);
 
     connect(m_seriesHRMap[str], &QLineSeries::clicked, m_chartView, &ChartView::keepCallout);
     connect(m_seriesHRMap[str], &QLineSeries::hovered, m_chartView, &ChartView::tooltipHRM);

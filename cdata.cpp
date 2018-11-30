@@ -8,8 +8,7 @@ CData::CData():
     temp(0),
     cad(0),
     pwr(0),
-    day(0,0,0),
-    hours(0,0,0,0),
+    datetime(QDate(0,0,0),QTime(0,0,0)),
     distance(0),
     speed(0),
     secDelta(0),
@@ -29,8 +28,7 @@ CData& CData::operator=(const CData& data)
     pwr=data.pwr;
     distance=data.distance;
     speed=data.speed;
-    day=data.day;
-    hours=data.hours;
+    datetime=data.datetime;
     sec=data.sec;
     secDelta=data.secDelta;
     bAddedPoint=data.bAddedPoint;

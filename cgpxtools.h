@@ -13,7 +13,8 @@ public:
     CGpxTools();
     static void DumpList(QList<CData>& list);
     static void DumpElement(CData& item);
-    static void GetGPXData(QString sFile, QList<CData>& list,QList<CData>& listTransformed);
+    static void GetGPXData(QString sFile, QList<CData>& list,int smoothing);
+    static QList<CData>& GetSmoothingList(int smoothing, QList<CData>& list);
 
 };
 

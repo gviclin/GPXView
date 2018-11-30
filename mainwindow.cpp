@@ -7,7 +7,8 @@
 
 QT_CHARTS_USE_NAMESPACE
 
-MainWindow::MainWindow()
+MainWindow::MainWindow():
+m_average(0)
 {
     QWidget *widget = new QWidget;
     setCentralWidget(widget);
@@ -32,7 +33,7 @@ MainWindow::MainWindow()
     QString message = tr("A context menu is available by right-clicking");
     statusBar()->showMessage(message);
 
-    setWindowTitle(tr("Menus"));
+    setWindowTitle(tr("Gpx Viewer"));
     setMinimumSize(160, 160);
     resize(1024,800);
 }
@@ -41,26 +42,60 @@ MainWindow::MainWindow()
 
 void MainWindow::newFile()
 {
-    QList<CData> list,listUpscaled;
-    CGpxTools::GetGPXData("../GPXView/Sortie_v_lo_le_midi.gpx",list,listUpscaled);
-
-    QStringList parts = m_fileNamePath.split("/");
-    QString filename = parts.at(parts.size()-1);
-
-    m_graphWidget->addNewDatas(list,filename);
-    m_graphWidget->addNewDatas(listUpscaled,filename+"_modified");
+    AddGpx("../GPXView/Sortie_v_lo_le_midi.gpx",0);
+    AddGpx("../GPXView/Sortie_v_lo_le_midi.gpx",4);
+    AddGpx("../GPXView/Sortie_v_lo_le_midi.gpx",8);
 
 }
 
 void MainWindow::open()
 {
-
-    m_fileNamePath = QFileDialog::getOpenFileName(this,
+    QString fileNamePath = QFileDialog::getOpenFileName(this,
         tr("Open GPX file"), "/home/gv/GPXView",
            /*QCoreApplication::applicationDirPath() QDir::currentPath()*/
            tr("Gpx Files (*.gpx)"));
+    bool ok;
+    m_average = QInputDialog::getInt(this, tr("Choose the smoothing (0 : no smoothing, ... , 8 : heavy smoothing"),
+                                          tr("Smoothing:"), 0, 0, 20, 1, &ok);
+    if (ok)
+    {
+        AddGpx(fileNamePath,m_average);
+    }
+}
 
-    newFile();
+void MainWindow::AddGpx(QString fileNamePath,int smoothing)
+{
+    QList<CData> list;
+
+    //get the datas
+    CGpxTools::GetGPXData(fileNamePath,list,smoothing);
+
+    //Compute the graph name
+    QStringList parts = fileNamePath.split("/");
+    QString filename = parts.at(parts.size()-1);
+    QString smooth;
+    smooth.sprintf(" (smooth %d)",smoothing);
+
+    filename+=(smoothing>0?smooth:"");
+
+    m_graphWidget->addNewGPX(list,filename);
+
+    //Add element in menu GPX
+    QAction *pAction = new QAction(filename, this);
+    pAction->setCheckable(true);
+    pAction->setChecked(true);
+    pAction->setStatusTip(tr("Gpx file"));
+    connect(pAction, &QAction::triggered, this, &MainWindow::clickGpx);
+    gpxMenu->addAction(pAction);
+
+}
+
+void MainWindow::clickGpx(bool boCkecked)
+{
+    QAction* pAction = qobject_cast<QAction*> (sender());
+    qDebug()<<"clickGpx " << pAction->text()<< (boCkecked?"  checked":"  unchecked");
+
+    m_graphWidget->setVisible(pAction->text(),boCkecked);
 
 }
 
@@ -155,18 +190,15 @@ void MainWindow::aboutQt()
 //! [4]
 void MainWindow::createActions()
 {
-//! [5]
     newAct = new QAction(tr("&New"), this);
     newAct->setShortcuts(QKeySequence::New);
     newAct->setStatusTip(tr("Create a new file"));
     connect(newAct, &QAction::triggered, this, &MainWindow::newFile);
-//! [4]
 
     openAct = new QAction(tr("&Open..."), this);
     openAct->setShortcuts(QKeySequence::Open);
     openAct->setStatusTip(tr("Open an existing file"));
     connect(openAct, &QAction::triggered, this, &MainWindow::open);
-//! [5]
 
     saveAct = new QAction(tr("&Save"), this);
     saveAct->setShortcuts(QKeySequence::Save);
@@ -274,31 +306,25 @@ void MainWindow::createActions()
     centerAct->setStatusTip(tr("Center the selected text"));
     connect(centerAct, &QAction::triggered, this, &MainWindow::center);
 
-//! [6] //! [7]
     alignmentGroup = new QActionGroup(this);
     alignmentGroup->addAction(leftAlignAct);
     alignmentGroup->addAction(rightAlignAct);
     alignmentGroup->addAction(justifyAct);
     alignmentGroup->addAction(centerAct);
     leftAlignAct->setChecked(true);
-//! [6]
-}
-//! [7]
 
-//! [8]
+}
+
 void MainWindow::createMenus()
 {
-//! [9] //! [10]
     fileMenu = menuBar()->addMenu(tr("&File"));
     fileMenu->addAction(newAct);
-//! [9]
+
     fileMenu->addAction(openAct);
-//! [10]
+
     fileMenu->addAction(saveAct);
     fileMenu->addAction(printAct);
-//! [11]
     fileMenu->addSeparator();
-//! [11]
     fileMenu->addAction(exitAct);
 
     editMenu = menuBar()->addMenu(tr("&Edit"));
@@ -310,12 +336,12 @@ void MainWindow::createMenus()
     editMenu->addAction(pasteAct);
     editMenu->addSeparator();
 
+    gpxMenu = menuBar()->addMenu(tr("&Gpx Files"));
+
     helpMenu = menuBar()->addMenu(tr("&Help"));
     helpMenu->addAction(aboutAct);
     helpMenu->addAction(aboutQtAct);
-//! [8]
 
-//! [12]
     formatMenu = editMenu->addMenu(tr("&Format"));
     formatMenu->addAction(boldAct);
     formatMenu->addAction(italicAct);
@@ -328,4 +354,3 @@ void MainWindow::createMenus()
     formatMenu->addAction(setLineSpacingAct);
     formatMenu->addAction(setParagraphSpacingAct);
 }
-//! [12]

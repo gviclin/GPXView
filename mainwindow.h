@@ -27,6 +27,7 @@ protected:
 #endif // QT_NO_CONTEXTMENU
 
 private slots:
+    void clickGpx(bool boCkecked);
     void newFile();
     void open();
     void save();
@@ -50,10 +51,13 @@ private slots:
 private:
     void createActions();
     void createMenus();
-    QString m_fileNamePath;
+    void AddGpx(QString fileNamePath,int smoothing);
+
+    int m_average;
     MainWidget* m_graphWidget;
     QMenu *fileMenu;
     QMenu *editMenu;
+    QMenu *gpxMenu;
     QMenu *formatMenu;
     QMenu *helpMenu;
     QActionGroup *alignmentGroup;

@@ -19,8 +19,7 @@ public:
     float temp;
     float cad;
     float pwr;
-    QDate day;
-    QTime hours;
+    QDateTime datetime;
 
 //computed values
     double distance; //in meters

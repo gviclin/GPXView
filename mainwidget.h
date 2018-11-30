@@ -18,7 +18,11 @@ class MainWidget : public QWidget
     Q_OBJECT
 public:
     explicit MainWidget(QWidget *parent = nullptr);
-    void addNewDatas(QList<CData> list, QString sName);
+    void addNewGPX(QList<CData> list, QString sName);
+    void setVisible(QString sName, bool boVisible);
+
+
+private:
     void addDatasToChart(QString str);
 
 signals:

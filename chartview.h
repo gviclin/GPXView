@@ -35,6 +35,7 @@ public Q_SLOTS:
         void tooltipSpeed(QPointF point, bool state);
         void tooltipHRM(QPointF point, bool state);
         void tooltipAlt(QPointF point, bool state);
+        void DoubleClicSpeed(QPointF point);
 
 protected:
     void mousePressEvent(QMouseEvent *event);

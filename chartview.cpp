@@ -93,7 +93,7 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event)
 void ChartView::keyPressEvent(QKeyEvent *event)
 {
     switch (event->key()) {
- /*   case Qt::Key_Plus:
+    case Qt::Key_Plus:
         chart()->zoomIn();
         break;
     case Qt::Key_Minus:
@@ -110,7 +110,7 @@ void ChartView::keyPressEvent(QKeyEvent *event)
         break;
     case Qt::Key_Down:
         chart()->scroll(0, -100);
-        break;*/
+        break;
     default:
         QGraphicsView::keyPressEvent(event);
         break;
@@ -126,9 +126,9 @@ void ChartView::wheelEvent(QWheelEvent *event)
          else
              chart()->zoomOut();*/
         if ( event->delta()>0)
-             chart()->scroll(100, 0);
+             chart()->scroll(-200, 0);
         else
-             chart()->scroll(-100, 0);
+             chart()->scroll(200, 0);
         m_noUpdate = true;
         //time de 500ms pour ne pas zoomer durant cette période
         QTimer::singleShot(500,(ChartView *) this, SLOT(ResetNoUpdate()));
@@ -163,6 +163,14 @@ void ChartView::tooltipAlt(QPointF point, bool state)
     m_mouseDataType = Data_Alt;
     tooltip(point, state);
 }
+
+void ChartView::DoubleClicSpeed(QPointF point)
+{
+    m_mouseDataType = Data_speed;
+    qDebug()<<"DoubleClicSpeed ";
+}
+
+
 
 void ChartView::tooltip(QPointF point, bool state)
 {
