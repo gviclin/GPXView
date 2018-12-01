@@ -31,7 +31,7 @@ private slots:
     void newFile();
     void open();
     void save();
-    void print();
+    void clearGpx();
     void undo();
     void redo();
     void cut();

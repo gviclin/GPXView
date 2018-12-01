@@ -20,7 +20,7 @@ void CGpxTools::GetGPXData(QString sFile, QList<CData>& list,int smoothing)
     int ind=0;
     if (reader.readNextStartElement())
     {
-        qDebug()<< "first start element" <<reader.name().toString();
+        //qDebug()<< "first start element" <<reader.name().toString();
         if (reader.name() == "gpx")
         {
             while (!reader.atEnd())
@@ -95,7 +95,7 @@ void CGpxTools::GetGPXData(QString sFile, QList<CData>& list,int smoothing)
             int Z;
 
             QList<CData>::iterator i;
-            qDebug()<<"Number of elements <"<<list.size()<<">";
+            //qDebug()<<"Number of elements <"<<list.size()<<">";
             //float distance =0;
             for (i = list.begin(); i!=list.end();)
             {
@@ -150,7 +150,7 @@ void CGpxTools::GetGPXData(QString sFile, QList<CData>& list,int smoothing)
         {
             CData& item =*i;
 
-            qDebug()<<"point : " << item.sec << "speed :" <<speedOldOld << " " << speedOld << " " << item.speed;
+            //qDebug()<<"point : " << item.sec << "speed :" <<speedOldOld << " " << speedOld << " " << item.speed;
 
 
             //correction points abérants

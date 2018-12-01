@@ -9,13 +9,15 @@
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QLabel>
 #include <QtCore/QDebug>
+#include <QComboBox>
 
 #include <QtWidgets/QFormLayout>
 #include <QtCore/QtMath>
 
 
 MainWidget::MainWidget(QWidget *parent) :
-    QWidget(parent)
+    QWidget(parent),
+    boIsKm(true)
 {
     CreateColor();
 
@@ -26,7 +28,17 @@ MainWidget::MainWidget(QWidget *parent) :
 
     // Create layout for grid and detached legend
     m_mainLayout = new QGridLayout();
-    m_mainLayout->addWidget(m_chartView, 0, 1, 3, 1);
+    m_mainLayout->addWidget(m_chartView, 0, 0, 15, 15);
+
+    QLabel *label = new QLabel("Here you will see the selected text from ComboBox", this);
+    QComboBox *combo = new QComboBox(this);
+    m_mainLayout->addWidget(label,16,0,Qt::AlignBottom);
+    m_mainLayout->addWidget(combo,17,0,Qt::AlignBottom);
+    combo->addItem("Km");
+    combo->addItem("Time");
+
+    QObject::connect(combo, SIGNAL(currentIndexChanged(QString)), this, SLOT(SelectAbscisse(QString)));
+
     setLayout(m_mainLayout);
 
     // Set the title and show legend
@@ -38,7 +50,25 @@ MainWidget::MainWidget(QWidget *parent) :
 
 }
 
+void MainWidget::SelectAbscisse(QString string)
+{
 
+    if (0 == QString::compare(string,"Km"))
+    {
+        boIsKm=true;
+    }
+    else
+    {
+       boIsKm=false;
+    }
+    qDebug()<<"SelectAbscisse"<<(boIsKm?"Km":"Time");
+    removeAllFromChart();
+
+    for(MapDataList::iterator it = m_GpxNameMap.begin();it != m_GpxNameMap.end();++it)
+    {
+          addDatasToChart(it.key());
+    }
+}
 
 void MainWidget::connectMarkers()
 {
@@ -108,43 +138,81 @@ void MainWidget::handleMarkerClicked()
     }
 }
 
-void MainWidget::addNewGPX(QList<CData> list, QString sName)
+bool MainWidget::addNewGPX(QList<CData>* plist, QString sName)
 {
-    m_GpxNameList.append(sName);
-
-    QLineSeries* seriesSpeed = new QLineSeries();
-    QLineSeries* seriesHR = new QLineSeries();
-    QLineSeries* seriesAlt = new QLineSeries();
-
-    seriesSpeed->setName("Speed - " + sName);
-    seriesHR->setName("HRM - " + sName);
-    seriesAlt->setName("Altitude - " + sName);
-
-    QList<CData>::iterator it;
-    for (it = list.begin(); it != list.end(); ++it) {
-        CData data = *it;
- /*       QPointF p((qreal) data.distance/1000, data.speed);
-        QPointF pHR((qreal) data.distance/1000, data.bpm);
-        QPointF pAlt((qreal) data.distance/1000, data.alt);*/
-        QPointF p((qreal) data.sec, data.speed);
-        QPointF pHR((qreal) data.sec, data.bpm);
-        QPointF pAlt((qreal) data.sec, data.alt);
-        //QPointF p((qreal) i, qSin(M_PI / 50 * i) * 100);
-        //p.ry() += std::rand()/((RAND_MAX)/50);
-        *seriesSpeed << p;
-        *seriesHR <<pHR;
-        *seriesAlt << pAlt;
-
+    if (m_GpxNameMap.find(sName) != m_GpxNameMap.end())
+    {
+        qDebug()<<"addNewGPX : Gpx file already imported! "  << sName;
+        return false;
     }
-
-    //m_EltNumbers = seriesAlt->points().last().rx();
-    m_seriesSpeedMap.insert(sName,seriesSpeed);
-    m_seriesHRMap.insert(sName,seriesHR);
-    m_seriesAltMap.insert(sName,seriesAlt);
+    m_GpxNameMap.insert(sName,plist);
 
     addDatasToChart(sName);
 
-    connectMarkers();
+    qDebug()<<"addNewGPX : "
+           <<" , m_GpxNameMap "   << m_GpxNameMap.count()
+           <<" , m_seriesSpeedMap "         << m_seriesSpeedMap.count()
+           <<" , m_seriesHRMap "            << m_seriesHRMap.count()
+           <<" , m_seriesAltMap "           << m_seriesAltMap.count()
+           <<"     "<< sName;
+
+    return true;
+}
+
+void MainWidget::removeAllGPX()
+{
+    //detruire tous les objets QList<CData>
+    for (MapDataList::iterator itDataList=m_GpxNameMap.begin();itDataList!=m_GpxNameMap.end();)
+    {
+        QList<CData>* pLlist = itDataList.value();
+        delete pLlist;
+
+        itDataList = m_GpxNameMap.erase(itDataList);
+    }
+    removeAllFromChart();
+    qDebug()<<"removeAllGPX : "
+           <<" , m_GpxNameMap "   << m_GpxNameMap.count()
+           <<" , m_seriesSpeedMap "         << m_seriesSpeedMap.count()
+           <<" , m_seriesHRMap "            << m_seriesHRMap.count()
+           <<" , m_seriesAltMap "           << m_seriesAltMap.count();
+}
+
+void MainWidget::removeAllFromChart()
+{
+    //Détruire les 3 listes
+    for (MapSerie::iterator it = m_seriesSpeedMap.begin(); it != m_seriesSpeedMap.end();)
+    {
+        QLineSeries* pSerie = it.value();
+
+        disconnect(pSerie, &QLineSeries::clicked, m_chartView, &ChartView::keepCallout);
+        disconnect(pSerie, &QLineSeries::hovered, m_chartView, &ChartView::tooltipSpeed);
+        disconnect(pSerie, &QLineSeries::doubleClicked, m_chartView, &ChartView::DoubleClicSpeed);
+
+        delete pSerie;
+        it = m_seriesSpeedMap.erase(it);
+    }
+    for (MapSerie::iterator it = m_seriesHRMap.begin(); it != m_seriesHRMap.end();)
+    {
+        QLineSeries* pSerie = it.value();
+
+        disconnect(pSerie, &QLineSeries::clicked, m_chartView, &ChartView::keepCallout);
+        disconnect(pSerie, &QLineSeries::hovered, m_chartView, &ChartView::tooltipHRM);
+
+        delete pSerie;
+        it = m_seriesHRMap.erase(it);
+    }
+    for (MapSerie::iterator it = m_seriesAltMap.begin(); it != m_seriesAltMap.end();)
+    {
+        QLineSeries* pSerie = it.value();
+
+        disconnect(pSerie, &QLineSeries::clicked, m_chartView, &ChartView::keepCallout);
+        disconnect(pSerie, &QLineSeries::hovered, m_chartView, &ChartView::tooltipAlt);
+
+        delete pSerie;
+        it = m_seriesAltMap.erase(it);
+    }
+
+    m_chart->removeAllSeries();
 }
 
 void MainWidget::setVisible(QString sName, bool boVisible)
@@ -157,6 +225,45 @@ void MainWidget::setVisible(QString sName, bool boVisible)
 
 void MainWidget::addDatasToChart(QString str)
 {
+    QLineSeries* seriesSpeed = new QLineSeries();
+    QLineSeries* seriesHR = new QLineSeries();
+    QLineSeries* seriesAlt = new QLineSeries();
+
+    seriesSpeed->setName("Speed - " + str);
+    seriesHR->setName("HRM - " + str);
+    seriesAlt->setName("Altitude - " + str);
+
+    QList<CData>::iterator it;
+    QPointF p;
+    QPointF pHR;
+    QPointF pAlt;
+    for (it = m_GpxNameMap[str]->begin(); it != m_GpxNameMap[str]->end(); ++it) {
+        CData data = *it;
+        if (boIsKm)
+        {
+            p = QPointF((qreal) data.distance/1000, data.speed);
+            pHR = QPointF((qreal) data.distance/1000, data.bpm);
+            pAlt = QPointF((qreal) data.distance/1000, data.alt);
+        }
+        else
+        {
+            p = QPointF((qreal) data.sec, data.speed);
+            pHR = QPointF((qreal) data.sec, data.bpm);
+            pAlt = QPointF((qreal) data.sec, data.alt);
+        }
+
+        //QPointF p((qreal) i, qSin(M_PI / 50 * i) * 100);
+        //p.ry() += std::rand()/((RAND_MAX)/50);
+        *seriesSpeed << p;
+        *seriesHR <<pHR;
+        *seriesAlt << pAlt;
+
+    }
+
+    //m_EltNumbers = seriesAlt->points().last().rx();
+    m_seriesSpeedMap.insert(str,seriesSpeed);
+    m_seriesHRMap.insert(str,seriesHR);
+    m_seriesAltMap.insert(str,seriesAlt);
 
     // Customize color
     int ColorNumber = m_seriesSpeedMap.count()-1;
@@ -184,6 +291,8 @@ void MainWidget::addDatasToChart(QString str)
     connect(m_seriesAltMap[str], &QLineSeries::clicked, m_chartView, &ChartView::keepCallout);
     connect(m_seriesAltMap[str], &QLineSeries::hovered, m_chartView, &ChartView::tooltipAlt);
 
+
+    connectMarkers();
 /*
     //axes
     QDateTime a,b;

@@ -16,32 +16,39 @@ class Callout;
 class MainWidget : public QWidget
 {
     Q_OBJECT
+
+    typedef QMap<QString, QList<CData>*> MapDataList;
+    typedef QMap<QString,QLineSeries *>  MapSerie;
 public:
     explicit MainWidget(QWidget *parent = nullptr);
-    void addNewGPX(QList<CData> list, QString sName);
+    bool addNewGPX(QList<CData>* plist, QString sName);
     void setVisible(QString sName, bool boVisible);
-
+    void removeAllGPX();
 
 private:
     void addDatasToChart(QString str);
+    void removeAllFromChart();
 
 signals:
 
 public slots:
      void connectMarkers();
      void handleMarkerClicked();
+     void SelectAbscisse(QString string);
 
  private:
     void CreateColor();
 
+    bool boIsKm;
     QMenu *m_fileMenu;
     QChart *m_chart;
     ChartView *m_chartView;
 
-    QMap<QString,QLineSeries *>m_seriesSpeedMap;
-    QMap<QString,QLineSeries *>m_seriesHRMap;
-    QMap<QString,QLineSeries *>m_seriesAltMap;
-    QList<QString>m_GpxNameList;
+    MapDataList  m_GpxNameMap;
+
+    MapSerie m_seriesSpeedMap;
+    MapSerie m_seriesHRMap;
+    MapSerie m_seriesAltMap;
 
     QVector<QColor> m_colorSpeedVector;
     QVector<QColor> m_colorHRVector;

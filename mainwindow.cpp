@@ -65,10 +65,10 @@ void MainWindow::open()
 
 void MainWindow::AddGpx(QString fileNamePath,int smoothing)
 {
-    QList<CData> list;
+    QList<CData>* plist = new QList<CData>;
 
     //get the datas
-    CGpxTools::GetGPXData(fileNamePath,list,smoothing);
+    CGpxTools::GetGPXData(fileNamePath,*plist,smoothing);
 
     //Compute the graph name
     QStringList parts = fileNamePath.split("/");
@@ -78,15 +78,18 @@ void MainWindow::AddGpx(QString fileNamePath,int smoothing)
 
     filename+=(smoothing>0?smooth:"");
 
-    m_graphWidget->addNewGPX(list,filename);
+    if (m_graphWidget->addNewGPX(plist,filename))
+    {
+        //Add element in menu GPX
+        QAction *pAction = new QAction(filename, this);
+        pAction->setCheckable(true);
+        pAction->setChecked(true);
+        pAction->setStatusTip(tr("Gpx file"));
+        connect(pAction, &QAction::triggered, this, &MainWindow::clickGpx);
+        gpxMenu->addAction(pAction);
+    }
 
-    //Add element in menu GPX
-    QAction *pAction = new QAction(filename, this);
-    pAction->setCheckable(true);
-    pAction->setChecked(true);
-    pAction->setStatusTip(tr("Gpx file"));
-    connect(pAction, &QAction::triggered, this, &MainWindow::clickGpx);
-    gpxMenu->addAction(pAction);
+
 
 }
 
@@ -104,9 +107,13 @@ void MainWindow::save()
     infoLabel->setText(tr("Invoked <b>File|Save</b>"));
 }
 
-void MainWindow::print()
+void MainWindow::clearGpx()
 {
-    infoLabel->setText(tr("Invoked <b>File|Print</b>"));
+    //suppression des items du menu GPX
+    gpxMenu->clear();
+
+    infoLabel->setText(tr("clearGpx <b>all Gpx files</b>"));
+    m_graphWidget->removeAllGPX();
 }
 
 void MainWindow::undo()
@@ -205,10 +212,10 @@ void MainWindow::createActions()
     saveAct->setStatusTip(tr("Save the document to disk"));
     connect(saveAct, &QAction::triggered, this, &MainWindow::save);
 
-    printAct = new QAction(tr("&Print..."), this);
-    printAct->setShortcuts(QKeySequence::Print);
-    printAct->setStatusTip(tr("Print the document"));
-    connect(printAct, &QAction::triggered, this, &MainWindow::print);
+    printAct = new QAction(tr("&Clear"), this);
+    printAct->setShortcuts(QKeySequence::Delete);
+    printAct->setStatusTip(tr("Clear all Gpx files"));
+    connect(printAct, &QAction::triggered, this, &MainWindow::clearGpx);
 
     exitAct = new QAction(tr("E&xit"), this);
     exitAct->setShortcuts(QKeySequence::Quit);
