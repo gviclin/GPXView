@@ -30,10 +30,8 @@ MainWidget::MainWidget(QWidget *parent) :
     m_mainLayout = new QGridLayout();
     m_mainLayout->addWidget(m_chartView, 0, 0, 15, 15);
 
-    QLabel *label = new QLabel("Here you will see the selected text from ComboBox", this);
     QComboBox *combo = new QComboBox(this);
-    m_mainLayout->addWidget(label,16,0,Qt::AlignBottom);
-    m_mainLayout->addWidget(combo,17,0,Qt::AlignBottom);
+    m_mainLayout->addWidget(combo,16,0,Qt::AlignBottom);
     combo->addItem("Km");
     combo->addItem("Time");
 
@@ -61,7 +59,7 @@ void MainWidget::SelectAbscisse(QString string)
     {
        boIsKm=false;
     }
-    qDebug()<<"SelectAbscisse"<<(boIsKm?"Km":"Time");
+    //qDebug()<<"SelectAbscisse"<<(boIsKm?"Km":"Time");
     removeAllFromChart();
 
     for(MapDataList::iterator it = m_GpxNameMap.begin();it != m_GpxNameMap.end();++it)
@@ -149,12 +147,12 @@ bool MainWidget::addNewGPX(QList<CData>* plist, QString sName)
 
     addDatasToChart(sName);
 
-    qDebug()<<"addNewGPX : "
+    /*qDebug()<<"addNewGPX : "
            <<" , m_GpxNameMap "   << m_GpxNameMap.count()
            <<" , m_seriesSpeedMap "         << m_seriesSpeedMap.count()
            <<" , m_seriesHRMap "            << m_seriesHRMap.count()
            <<" , m_seriesAltMap "           << m_seriesAltMap.count()
-           <<"     "<< sName;
+           <<"     "<< sName;*/
 
     return true;
 }
@@ -292,7 +290,7 @@ void MainWidget::addDatasToChart(QString str)
     connect(m_seriesAltMap[str], &QLineSeries::hovered, m_chartView, &ChartView::tooltipAlt);
 
 
-    connectMarkers();
+
 /*
     //axes
     QDateTime a,b;
@@ -350,6 +348,7 @@ void MainWidget::addDatasToChart(QString str)
 
     m_chart->createDefaultAxes();
 
+    connectMarkers();
 }
 
 void MainWidget::CreateColor()

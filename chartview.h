@@ -7,6 +7,8 @@
 
 #include "callout.h"
 
+class MainWidget;
+
 QT_CHARTS_USE_NAMESPACE
 
 class ChartView : public QChartView
@@ -48,6 +50,7 @@ protected:
 
 
 private:
+    MainWidget* pMainWidget;
     QPointF m_lastMousePos;
     bool m_noUpdate;
 

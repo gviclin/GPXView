@@ -2,9 +2,11 @@
 #include <QDebug>
 #include <QTimer>
 #include <QApplication>
+#include <QTime>
 
 
 #include "chartview.h"
+#include "mainwidget.h"
 
 ChartView::ChartView(QChart *chart, QWidget *parent) :
     QChartView(chart, parent),
@@ -14,6 +16,7 @@ ChartView::ChartView(QChart *chart, QWidget *parent) :
     m_tooltip(0),
     m_mouseDataType(No_data)
 {
+    pMainWidget = (MainWidget*) parent;
     setRubberBand(QChartView::HorizontalRubberBand);
     setDragMode(QGraphicsView::NoDrag);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -227,6 +230,21 @@ QString ChartView::GetToolTipString(QPointF point)
     QString strValueX = QString::number(point.x(), 'f', 1);
     QString strValueY;
 
+    //retreive abscisse type
+    bool boIskm = pMainWidget->isKm();
+
+    QString abs;
+    if (boIskm)
+    {
+        abs = QString("%1 km").arg(strValueX);
+    }
+    else
+    {   QTime time(0,0,0);
+        int sec = (int)(point.x());
+        qDebug()<<"sec : " << sec;
+        time = time.addSecs(sec);
+        abs = QString("time %1").arg(time.toString("h:mm:ss"));
+    }
 
     switch (m_mouseDataType){
         case No_data:
@@ -234,15 +252,15 @@ QString ChartView::GetToolTipString(QPointF point)
             break;
         case Data_speed:
             strValueY = QString::number(point.y(), 'f', 1);
-            str = QString("%1 %2 km/h\nX %3").arg("Speed").arg(strValueY).arg(strValueX);
+            str = QString("%1 %2 km/h\n %3").arg("Speed").arg(strValueY).arg(abs);
             break;
         case Data_HRM:
             strValueY = QString::number(point.y(), 'f', 0);
-            str = QString("%1 %2 bpm\nX %3").arg("HR").arg(strValueY).arg(strValueX);
+            str = QString("%1 %2 bpm\n %3").arg("HR").arg(strValueY).arg(abs);
             break;
         case Data_Alt:
             strValueY = QString::number(point.y(), 'f', 0);
-            str = QString("%1 %2 m\nX %3").arg("Altitude").arg(strValueY).arg(strValueX);
+            str = QString("%1 %2 m\n %3").arg("Altitude").arg(strValueY).arg(abs);
             break;
         default:
             str="";

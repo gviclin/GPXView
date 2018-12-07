@@ -24,6 +24,7 @@ public:
     bool addNewGPX(QList<CData>* plist, QString sName);
     void setVisible(QString sName, bool boVisible);
     void removeAllGPX();
+    bool isKm() {return boIsKm;}
 
 private:
     void addDatasToChart(QString str);

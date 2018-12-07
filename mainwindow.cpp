@@ -35,7 +35,7 @@ m_average(0)
 
     setWindowTitle(tr("Gpx Viewer"));
     setMinimumSize(160, 160);
-    resize(1024,800);
+    resize(1600,1024);
 }
 
 
@@ -43,8 +43,8 @@ m_average(0)
 void MainWindow::newFile()
 {
     AddGpx("../GPXView/Sortie_v_lo_le_midi.gpx",0);
+    AddGpx("../GPXView/Sortie_v_lo_le_midi.gpx",2);
     AddGpx("../GPXView/Sortie_v_lo_le_midi.gpx",4);
-    AddGpx("../GPXView/Sortie_v_lo_le_midi.gpx",8);
 
 }
 
