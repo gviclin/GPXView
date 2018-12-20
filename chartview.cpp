@@ -241,7 +241,7 @@ QString ChartView::GetToolTipString(QPointF point)
     else
     {   QTime time(0,0,0);
         int sec = (int)(point.x());
-        qDebug()<<"sec : " << sec;
+        //qDebug()<<"sec : " << sec;
         time = time.addSecs(sec);
         abs = QString("time %1").arg(time.toString("h:mm:ss"));
     }

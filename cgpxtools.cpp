@@ -6,7 +6,7 @@ CGpxTools::CGpxTools()
 
 }
 
-void CGpxTools::GetGPXData(QString sFile, QList<CData>& list,int smoothing)
+void CGpxTools::GetGPXData(QString sFile, QList<CData>& list,int smoothing, double factor)
 {
     //open GPX File
     QFile file(sFile);
@@ -71,15 +71,17 @@ void CGpxTools::GetGPXData(QString sFile, QList<CData>& list,int smoothing)
                         }
                         if (reader.isStartElement() && reader.name()== "atemp")
                         {
-                           item.temp =  reader.readElementText().toInt();
+                           item.temp =  reader.readElementText().toFloat();
                         }
                         if (reader.isStartElement() && reader.name()== "hr")
                         {
-                           item.bpm = reader.readElementText().toInt();
+                           item.bpm = reader.readElementText().toFloat();
                         }
                         if (reader.isStartElement() && reader.name()== "cad")
                         {
-                           item.cad = reader.readElementText().toInt();
+                           item.cad = reader.readElementText().toFloat();
+
+                           //qDebug()<<"cad : "<< item.cad;
                         }
                         reader.readNext();
                     }
@@ -139,7 +141,7 @@ void CGpxTools::GetGPXData(QString sFile, QList<CData>& list,int smoothing)
     }
 
 
-    //DumpList(list);
+
 
     if (true)
     {
@@ -197,10 +199,12 @@ void CGpxTools::GetGPXData(QString sFile, QList<CData>& list,int smoothing)
         list=newList;
     }
 
+
+
     //upscaling
     CData Olditem(*list.begin());
-    QList<CData> listUpscaling;
-    listUpscaling.append(Olditem);
+    QList<CData>* plistUpscaling = new QList<CData>;
+    plistUpscaling->append(Olditem);
     for (QList<CData>::iterator i = list.begin(); i != list.end(); ++i)
     {
         CData& item = *i;
@@ -237,21 +241,152 @@ void CGpxTools::GetGPXData(QString sFile, QList<CData>& list,int smoothing)
                    newItem.lon= Olditem.lon + ind*tempLon;
                    newItem.lat= Olditem.lat + ind*tempLat;
                    newItem.bAddedPoint=true;
-                   listUpscaling.append(newItem);
+                   plistUpscaling->append(newItem);
                 }
                 item.secDelta=1;
             }
-            listUpscaling.append(item);
+            plistUpscaling->append(item);
         }
         Olditem = item;
     }
+    list=*plistUpscaling;
 
-  //  DumpList(listUpscaling);
-    if (smoothing > 0)
+
+    // acceletate
+    if (factor != 1)
     {
-        list = GetSmoothingList(smoothing,listUpscaling);
+        list = GetAccelerateList(list, factor);
     }
 
+    //  DumpList(listUpscaling);
+    if (smoothing > 0)
+    {
+       list = GetSmoothingList(smoothing,list);
+    }
+
+    DumpList(list);
+
+    SaveList(sFile, list);
+}
+
+QList<CData>& CGpxTools::GetAccelerateList(QList<CData>& list, double factor /*1 no acceleration, 1.1 : 10% accelerate*/)
+{
+    int NewSecNumber = list.last().sec/factor;
+    QDateTime to = list.first().datetime;
+
+    // modification du temps en abscisse
+    QList<CData>::iterator it,itTemp;
+    for (it = list.begin(); it != list.end(); it++)
+    {
+        (*it).sec = (*it).sec / factor;
+    }
+    //DumpList(list);
+
+    //ré-échantillonage sur des secondes pleines
+    QList<CData>* pLlistAcc = new QList<CData>;
+    CData dataPrev;
+    CData dataNext;
+    CData data;
+    qDebug()<<"Number of sec : " << NewSecNumber << " sec";
+    for (int i=0;i<NewSecNumber;++i)
+    {
+        //recherche des 2 points englobant le point que l'on construit
+        for (it = list.begin(); it != list.end(); it++)
+        {
+            dataPrev = (*it);
+            if (dataPrev.sec == i)
+            {
+                //trouvé
+                data = dataPrev;
+                data.speed= factor*data.speed;
+                data.datetime = to.addSecs(i);
+                break;
+            }
+            else
+            {
+                itTemp=it;
+                itTemp++;
+                if (itTemp == list.end())
+                {
+                    //fin on prend le dernier élément
+                    data = dataNext;
+                    data.speed= factor*data.speed;
+                    data.datetime = to.addSecs(i);
+                    break;
+                }
+                else
+                {
+                    dataNext = (*itTemp);
+                    if (dataPrev.sec < i && dataNext.sec > i)
+                    {
+                        data.sec = i;
+                        data.secDelta = 1;
+                        //trouvé : calcul du nouveau point entre les deux points
+                        double pourcent = (data.sec - dataPrev.sec)/(dataNext.sec - dataPrev.sec);
+                        data.alt = dataPrev.alt + pourcent * (dataNext.alt - dataPrev.alt);
+                        data.lon = dataPrev.lon + pourcent * (dataNext.lon - dataPrev.lon);
+                        data.lat = dataPrev.lat + pourcent * (dataNext.lat - dataPrev.lat);
+                        data.bpm = dataPrev.bpm + pourcent * (dataNext.bpm - dataPrev.bpm);
+                        data.temp = dataPrev.temp + pourcent * (dataNext.temp - dataPrev.temp);
+                        data.cad = dataPrev.cad + pourcent * (dataNext.cad - dataPrev.cad);
+                        data.pwr = dataPrev.pwr + pourcent * (dataNext.pwr - dataPrev.pwr);
+                        data.distance = dataPrev.distance + pourcent * (dataNext.distance - dataPrev.distance);
+                        data.speed = factor *(dataPrev.speed + pourcent * (dataNext.speed - dataPrev.speed));
+
+                        //datetime
+                        data.datetime = to.addSecs(i);
+
+                        break;
+                    }
+                }
+            }
+        }
+        pLlistAcc->append(data);
+
+    }
+
+    return *pLlistAcc;
+
+}
+
+void CGpxTools::SaveList(QString sFile, QList<CData>& list)
+{
+    sFile+= "_modified.gpx";
+
+    //open GPX File
+    QFile file(sFile);
+    if(!file.open(QFile::WriteOnly | QFile::Text)){
+        qDebug() << "Cannot write file :" << file.errorString();
+        exit(0);
+    }
+
+    file.write("  <trkseg>\n");
+
+    QList<CData>::iterator it;
+    QString tmp;
+    int intTemp;
+    for (it = list.begin(); it != list.end(); it++)
+    {
+        tmp = "   <trkpt lat=\"" + QString::number((*it).lat, 'f', 7) +
+                "\" lon=\"" + QString::number((*it).lon, 'f', 7) + "\">\n";
+        tmp += "    <ele>" + QString::number((*it).alt, 'f', 1) + "</ele>\n";
+        tmp += "    <time>" +(*it).datetime.toString(Qt::ISODate)+ "</time>\n";
+        tmp += "    <extensions>\n";
+        tmp += "     <gpxtpx:TrackPointExtension>\n";
+        intTemp = static_cast<int>((*it).bpm + .5f);
+        tmp += "      <gpxtpx:hr>" + QString::number(intTemp) + "</gpxtpx:hr>\n";
+        intTemp = static_cast<int>((*it).cad + .5f);
+        tmp += "      <gpxtpx:cad>" + QString::number(intTemp) + "</gpxtpx:cad>\n";
+        tmp += "     </gpxtpx:TrackPointExtension>\n";
+        tmp += "    </extensions>\n";
+        tmp += "   </trkpt>\n";
+        file.write(tmp.toStdString().c_str());
+
+    }
+    file.write("  </trkseg>\n");
+    file.close();
+
+    QXmlStreamReader reader(&file);
 }
 
 QList<CData>& CGpxTools::GetSmoothingList(int smoothing/*0 pas de moyenne, 1 : moyenne sur 3, 2 : moyenne sur 5, etc*/,

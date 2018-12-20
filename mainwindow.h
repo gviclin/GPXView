@@ -51,9 +51,10 @@ private slots:
 private:
     void createActions();
     void createMenus();
-    void AddGpx(QString fileNamePath,int smoothing);
+    void AddGpx(QString fileNamePath,int smoothing, double factor =1);
 
     int m_average;
+    double m_factor;
     MainWidget* m_graphWidget;
     QMenu *fileMenu;
     QMenu *editMenu;

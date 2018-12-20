@@ -140,7 +140,7 @@ bool MainWidget::addNewGPX(QList<CData>* plist, QString sName)
 {
     if (m_GpxNameMap.find(sName) != m_GpxNameMap.end())
     {
-        qDebug()<<"addNewGPX : Gpx file already imported! "  << sName;
+        //qDebug()<<"addNewGPX : Gpx file already imported! "  << sName;
         return false;
     }
     m_GpxNameMap.insert(sName,plist);
@@ -168,11 +168,11 @@ void MainWidget::removeAllGPX()
         itDataList = m_GpxNameMap.erase(itDataList);
     }
     removeAllFromChart();
-    qDebug()<<"removeAllGPX : "
+   /* qDebug()<<"removeAllGPX : "
            <<" , m_GpxNameMap "   << m_GpxNameMap.count()
            <<" , m_seriesSpeedMap "         << m_seriesSpeedMap.count()
            <<" , m_seriesHRMap "            << m_seriesHRMap.count()
-           <<" , m_seriesAltMap "           << m_seriesAltMap.count();
+           <<" , m_seriesAltMap "           << m_seriesAltMap.count();*/
 }
 
 void MainWidget::removeAllFromChart()

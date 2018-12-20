@@ -25,7 +25,7 @@ public:
     double distance; //in meters
     float speed; //in km/h
     int secDelta;
-    int sec;
+    double sec;
     bool bAddedPoint;
    };
 

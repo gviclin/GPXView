@@ -8,7 +8,7 @@
 QT_CHARTS_USE_NAMESPACE
 
 MainWindow::MainWindow():
-m_average(0)
+m_average(0),m_factor(0)
 {
     QWidget *widget = new QWidget;
     setCentralWidget(widget);
@@ -42,9 +42,11 @@ m_average(0)
 
 void MainWindow::newFile()
 {
-    AddGpx("../GPXView/Sortie_v_lo_le_midi.gpx",0);
+   /* AddGpx("../GPXView/Sortie_v_lo_le_midi.gpx",0);
     AddGpx("../GPXView/Sortie_v_lo_le_midi.gpx",2);
-    AddGpx("../GPXView/Sortie_v_lo_le_midi.gpx",4);
+    AddGpx("../GPXView/Sortie_v_lo_le_midi.gpx",4);*/
+
+    AddGpx("../GPXView/10km.gpx",0,1.1);
 
 }
 
@@ -57,18 +59,21 @@ void MainWindow::open()
     bool ok;
     m_average = QInputDialog::getInt(this, tr("Choose the smoothing (0 : no smoothing, ... , 8 : heavy smoothing"),
                                           tr("Smoothing:"), 0, 0, 20, 1, &ok);
+
+    m_factor =  QInputDialog::getDouble(this, tr("Choose the acceleration factor (1 : no acceleration, ..."),
+                                     tr("Acceleration:"), 1, 0, 100, 3, &ok);
     if (ok)
     {
-        AddGpx(fileNamePath,m_average);
+        AddGpx(fileNamePath,m_average,m_factor);
     }
 }
 
-void MainWindow::AddGpx(QString fileNamePath,int smoothing)
+void MainWindow::AddGpx(QString fileNamePath,int smoothing, double factor)
 {
     QList<CData>* plist = new QList<CData>;
 
     //get the datas
-    CGpxTools::GetGPXData(fileNamePath,*plist,smoothing);
+    CGpxTools::GetGPXData(fileNamePath,*plist,smoothing, factor);
 
     //Compute the graph name
     QStringList parts = fileNamePath.split("/");
