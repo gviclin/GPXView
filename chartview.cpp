@@ -137,8 +137,8 @@ void ChartView::keyPressEvent(QKeyEvent *event)
                    }
                }
 
-               SpeedometerManager manager;
-               manager.addDatas(listFinal, pMainWidget);
+               SpeedometerManager* manager = new SpeedometerManager;
+               manager->addDatas(listFinal, pMainWidget);
 
            }
 

@@ -2,6 +2,7 @@
 
 #include <QtCharts/QAbstractAxis>
 #include <QtCharts/QSplineSeries>
+#include <QtCharts/QLineSeries>
 #include <QtCharts/QValueAxis>
 //#include <QtCore/QRandomGenerator>
 #include <QtCore/QDebug>
@@ -31,7 +32,7 @@ SpeedometerChart::SpeedometerChart(QGraphicsItem *parent, Qt::WindowFlags wFlags
     m_series->attachAxis(m_axisX);
     m_series->attachAxis(m_axisY);
     m_axisX->setTickCount(5);
-    m_axisX->setRange(0,50);
+    m_axisX->setRange(0,300);
     m_axisY->setRange(0, 60);
 
     m_timer.start();
@@ -54,15 +55,28 @@ void SpeedometerChart::handleTimeout()
 {
     //qreal x = plotArea().width() / m_axisX->tickCount();
     //qreal y = (m_axisX->max() - m_axisX->min()) / m_axisX->tickCount();
-    m_x += 1;
-    m_y = m_list.takeFirst().y();
-    qDebug()<< m_x << " : " << m_y;
+
    // m_y += (qrand()%5-2);
 //    m_y = QRandomGenerator::global()->bounded(5) - 2.5;
-    m_series->append(m_x, m_y);
+
    // scroll(x, 0);
-    if (m_x == 100)
-        m_timer.stop();
+    //qDebug()<< m_x << " : " << m_y;
+
+    m_x += 1;
+    m_y = m_list.takeFirst().y();
+
+    m_series->append(m_x, m_y);
+
+    //qDebug()<< "count : " << m_series->points().size();
+    for (int i = 0; i < m_series->count();i++)
+    {
+        QPointF point = m_series->at(i);
+        m_series->replace(i,point.x(),point.y()+(qrand()%3-1));
+    }
+    //qDebug()<< " ";
+
+ /*   if (m_x == 100)
+        m_timer.stop();*/
 }
 
 

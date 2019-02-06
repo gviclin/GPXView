@@ -28,7 +28,7 @@ void SpeedometerManager::addDatas(QList<QPointF>& list, QWidget* parent)
 
 
     QMainWindow*  window = new QMainWindow(parent);
-    SpeedometerChart *chart = new SpeedometerChart;
+    SpeedometerChart* chart = new SpeedometerChart;
     chart->addDatas(list);
     chart->setTitle("Dynamic spline chart");
     chart->legend()->hide();

@@ -264,7 +264,7 @@ void CGpxTools::GetGPXData(QString sFile, QList<CData>& list,int smoothing, doub
        list = GetSmoothingList(smoothing,list);
     }
 
-    DumpList(list);
+    //DumpList(list);
 
     SaveList(sFile, list);
 }
