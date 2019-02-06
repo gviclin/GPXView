@@ -17,7 +17,7 @@
 
 MainWidget::MainWidget(QWidget *parent) :
     QWidget(parent),
-    boIsKm(true)
+    boIsKm(false)
 {
     CreateColor();
 
@@ -32,8 +32,9 @@ MainWidget::MainWidget(QWidget *parent) :
 
     QComboBox *combo = new QComboBox(this);
     m_mainLayout->addWidget(combo,16,0,Qt::AlignBottom);
-    combo->addItem("Km");
     combo->addItem("Time");
+    combo->addItem("Km");
+
 
     QObject::connect(combo, SIGNAL(currentIndexChanged(QString)), this, SLOT(SelectAbscisse(QString)));
 

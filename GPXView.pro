@@ -29,7 +29,9 @@ HEADERS += \
     cgpxtools.h \
     mainwidget.h \
     callout.h \
-    mainwindow.h
+    mainwindow.h \
+    speedometermanager.h \
+    speedometerchart.h
 
 SOURCES += \
     main.cpp \
@@ -39,4 +41,6 @@ SOURCES += \
     cgpxtools.cpp \
     mainwidget.cpp \
     callout.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    speedometermanager.cpp \
+    speedometerchart.cpp

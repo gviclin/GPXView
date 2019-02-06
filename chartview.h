@@ -61,6 +61,9 @@ private:
 
     MouseDataType m_mouseDataType;
 
+    //pour le module d'affichage de la vitesse
+    int m_beginTime;
+
 };
 
 #endif

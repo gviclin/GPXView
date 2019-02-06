@@ -35,6 +35,7 @@ m_average(0),m_factor(0)
 
     setWindowTitle(tr("Gpx Viewer"));
     setMinimumSize(160, 160);
+    //resize(800,512);
     resize(1600,1024);
 }
 
@@ -46,7 +47,7 @@ void MainWindow::newFile()
     AddGpx("../GPXView/Sortie_v_lo_le_midi.gpx",2);
     AddGpx("../GPXView/Sortie_v_lo_le_midi.gpx",4);*/
 
-    AddGpx("../GPXView/10km.gpx",0,1.1);
+    AddGpx("../GPXView/Route_Sadirac.gpx",0,1);
 
 }
 

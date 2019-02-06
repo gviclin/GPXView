@@ -7,6 +7,7 @@
 
 #include "chartview.h"
 #include "mainwidget.h"
+#include "speedometermanager.h"
 
 ChartView::ChartView(QChart *chart, QWidget *parent) :
     QChartView(chart, parent),
@@ -14,7 +15,8 @@ ChartView::ChartView(QChart *chart, QWidget *parent) :
     m_coordX(0),
     m_coordY(0),
     m_tooltip(0),
-    m_mouseDataType(No_data)
+    m_mouseDataType(No_data),
+    m_beginTime(0)
 {
     pMainWidget = (MainWidget*) parent;
     setRubberBand(QChartView::HorizontalRubberBand);
@@ -54,6 +56,7 @@ void ChartView::mousePressEvent(QMouseEvent *event)
         QApplication::setOverrideCursor(QCursor(Qt::SizeAllCursor));
         m_lastMousePos = event->pos();
         event->accept();
+
     }
     QChartView::mousePressEvent(event);
 }
@@ -114,6 +117,37 @@ void ChartView::keyPressEvent(QKeyEvent *event)
     case Qt::Key_Down:
         chart()->scroll(0, -100);
         break;
+    case Qt::Key_Space:
+        if (m_beginTime !=0)
+        {
+           qDebug()<< " Key_Enter : " << m_beginTime;
+
+           //recuperation de la liste à partir de l'encroit choisi
+           QLineSeries* pCurrentSerie = GetCurrentSeries();
+           if (NULL != pCurrentSerie)
+           {
+               QList<QPointF> list = pCurrentSerie->points();
+               QList<QPointF>::iterator it;
+               QList<QPointF> listFinal;
+               for (it = list.begin();it!=list.end();++it)
+               {
+                   if ((*it).x() > m_beginTime)
+                   {
+                       listFinal.append((*it));
+                   }
+               }
+
+               SpeedometerManager manager;
+               manager.addDatas(listFinal, pMainWidget);
+
+           }
+
+        }
+        else
+        {
+          qDebug()<< " Key_Enter  no data";
+        }
+        break;
     default:
         QGraphicsView::keyPressEvent(event);
         break;
@@ -169,8 +203,12 @@ void ChartView::tooltipAlt(QPointF point, bool state)
 
 void ChartView::DoubleClicSpeed(QPointF point)
 {
-    m_mouseDataType = Data_speed;
-    qDebug()<<"DoubleClicSpeed ";
+    //m_mouseDataType = Data_speed;
+    qDebug()<<"DoubleClicSpeed " << point.x();
+
+
+
+
 }
 
 
@@ -191,6 +229,7 @@ void ChartView::tooltip(QPointF point, bool state)
     } else {
         m_tooltip->hide();
         m_mouseDataType = No_data;
+        m_beginTime = 0;
     }
 }
 QLineSeries* ChartView::GetCurrentSeries()
@@ -244,12 +283,10 @@ QString ChartView::GetToolTipString(QPointF point)
         //qDebug()<<"sec : " << sec;
         time = time.addSecs(sec);
         abs = QString("time %1").arg(time.toString("h:mm:ss"));
+        m_beginTime = sec;
     }
 
     switch (m_mouseDataType){
-        case No_data:
-            str = "";
-            break;
         case Data_speed:
             strValueY = QString::number(point.y(), 'f', 1);
             str = QString("%1 %2 km/h\n %3").arg("Speed").arg(strValueY).arg(abs);
@@ -262,8 +299,10 @@ QString ChartView::GetToolTipString(QPointF point)
             strValueY = QString::number(point.y(), 'f', 0);
             str = QString("%1 %2 m\n %3").arg("Altitude").arg(strValueY).arg(abs);
             break;
+        case No_data:
         default:
             str="";
+            m_beginTime = 0;
     }
     return str;
 }
