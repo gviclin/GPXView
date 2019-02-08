@@ -8,6 +8,7 @@
 #include "callout.h"
 
 class MainWidget;
+class SpeedometerManager;
 
 QT_CHARTS_USE_NAMESPACE
 
@@ -16,6 +17,7 @@ class ChartView : public QChartView
     Q_OBJECT
 public:
     ChartView(QChart *chart, QWidget *parent = 0);
+    ~ChartView();
 
 private:
     QLineSeries* GetCurrentSeries();
@@ -63,6 +65,8 @@ private:
 
     //pour le module d'affichage de la vitesse
     int m_beginTime;
+
+    SpeedometerManager* m_manager;
 
 };
 

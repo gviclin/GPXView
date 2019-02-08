@@ -31,7 +31,9 @@ HEADERS += \
     callout.h \
     mainwindow.h \
     speedometermanager.h \
-    speedometerchart.h
+    speedometerchart.h \
+    caveragefactory.h \
+    qcgaugewidget.h
 
 SOURCES += \
     main.cpp \
@@ -43,4 +45,6 @@ SOURCES += \
     callout.cpp \
     mainwindow.cpp \
     speedometermanager.cpp \
-    speedometerchart.cpp
+    speedometerchart.cpp \
+    caveragefactory.cpp \
+    qcgaugewidget.cpp

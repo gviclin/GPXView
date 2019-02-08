@@ -16,7 +16,8 @@ ChartView::ChartView(QChart *chart, QWidget *parent) :
     m_coordY(0),
     m_tooltip(0),
     m_mouseDataType(No_data),
-    m_beginTime(0)
+    m_beginTime(0),
+    m_manager(NULL)
 {
     pMainWidget = (MainWidget*) parent;
     setRubberBand(QChartView::HorizontalRubberBand);
@@ -33,6 +34,11 @@ ChartView::ChartView(QChart *chart, QWidget *parent) :
 
     this->setMouseTracking(true);
 
+}
+
+ChartView::~ChartView()
+{
+    //delete m_manager;
 }
 
 void ChartView::resizeEvent(QResizeEvent *event)
@@ -137,8 +143,8 @@ void ChartView::keyPressEvent(QKeyEvent *event)
                    }
                }
 
-               SpeedometerManager* manager = new SpeedometerManager;
-               manager->addDatas(listFinal, pMainWidget);
+               m_manager = new SpeedometerManager;
+               m_manager->addDatas(listFinal, pMainWidget);
 
            }
 
